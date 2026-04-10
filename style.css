@@ -1,0 +1,362 @@
+:root {
+    --bg-color: #ebf1f5; /* Основной фон страницы — делаем его чуть темнее */
+    --card-bg: #ffffff;  /* Белая карточка */
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --cherry-red: #dc2626;
+    --cherry-bg: #fee2e2; /* Светло-красный фон для рамочки */
+    --border-color: #e5e7eb;
+    
+}
+
+html {
+    overflow-y: scroll;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    margin: 0;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    width: 100%;
+}
+
+/* Стили карточки профиля */
+.profile-card {
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    padding: 16px 28px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 
+                0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    transition: opacity 0.2s, transform 0.2s;
+    margin-bottom: 24px;
+}
+
+.profile-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-card:hover {
+    transform: scale(1.01);
+}
+
+.avatar-placeholder {
+    width: 100px;
+    height: 100px;
+    /* background-color: #f3f4f6; */
+    border: 4px dashed var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.user-avatar-img {
+    width: 100%;       /* Растянуть по ширине родителя */
+    height: 100%;      /* Растянуть по высоте родителя */
+    object-fit: cover; /* Магическое свойство: сохраняет пропорции, обрезая лишнее, если картинка не квадратная */
+    display: block;    /* Убирает странные отступы снизу */
+}
+
+.user-info h1 {
+    margin: 0 0 4px 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.user-meta {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* Стили блока с вишенками */
+.balance-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cherry-icon {
+    display: flex;
+    align-items: center;
+    margin: 0px;
+}
+
+.balance-badge {
+    background-color: #D9D9D9;
+    color: var(--cherry-red);
+    
+    /* Жирное начертание и шрифт */
+    font-weight: 900; 
+    font-size: 28px;
+    
+    /* Внутренние отступы позволяют блоку тянуться под контент */
+    padding: 6px 10px;
+    min-width: 40px; /* Минимальная ширина, чтобы одна цифра не была слишком узкой */
+    min-height: 32px;
+    text-align: center;
+    
+    /* Скругление и рамка */
+    border-radius: 10px;
+    /* border: 1.5px solid rgba(220, 38, 38, 0.1);  Полупрозрачная рамка */
+
+    /* Эффект углубления (Inner Shadow) */
+    /* Первый слой: легкая тень сверху, второй слой: свет снизу для объема */
+    box-shadow: 
+        inset 0 3px 0px rgba(0, 0, 0, 0.08);
+        /* inset 0 1px 0px rgba(0, 0, 0, 0.05); */
+    
+    /* Чтобы блок не схлопывался и правильно тянулся */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.balance-text {
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+.cherry-text {
+    color: var(--cherry-red); /* Тот самый красный цвет */
+    /* text-shadow: 0 0 8px rgba(220, 38, 38, 0.2); Очень легкое красное сияние */
+}
+
+/* --- Секция Лидерборда --- */
+.leaderboard-section {
+    margin-top: 24px;
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    padding: 24px 32px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 
+                0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--border-color);
+    margin-bottom: 24px;
+}
+
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap; /* Чтобы на телефонах поиск падал на новую строку */
+    gap: 16px;
+}
+
+.leaderboard-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* Строка поиска и выпадающий список */
+.leaderboard-controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.leaderboard-controls input,
+.leaderboard-controls select {
+    padding: 10px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    background-color: #fff;
+}
+
+.leaderboard-controls input:focus,
+.leaderboard-controls select:focus {
+    border-color: var(--cherry-red); /* Подсветка при клике */
+}
+
+#group-filter {
+    /* 1. Убираем стандартную системную галочку */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    /* 2. Оформляем само окошко */
+    padding: 10px 35px 10px 16px; /* Увеличиваем правый отступ для нашей стрелочки */
+    background-color: #ffffff;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    /* 3. Рисуем свою галочку через background-image */
+    /* Ты можешь вставить сюда свою SVG иконку или использовать этот стандартный символ */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    
+    /* ВОТ ЗДЕСЬ МЫ ДВИГАЕМ ГАЛОЧКУ: 12px от правого края */
+    background-position: calc(100% - 12px) center; 
+}
+
+/* Эффект при наведении */
+#group-filter:hover {
+    border-color: var(--cherry-red);
+}
+
+/* Эффект при клике */
+#group-filter:focus {
+    outline: none;
+    border-color: var(--cherry-red);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Таблица */
+.table-container {
+    overflow-x: auto; /* Горизонтальный скролл для мобилок */
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.leaderboard-table th {
+    padding: 12px 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 13px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.leaderboard-table td {
+    padding: 12px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.leaderboard-table tbody tr:hover {
+    background-color: #f9fafb; /* Эффект наведения на строку */
+}
+
+.cherry-balance-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Отступ между иконкой и числом */
+    font-weight: 600;
+    color: var(--cherry-red);
+}
+
+/* Контейнер для SVG внутри таблицы */
+.table-cherry-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* Чтобы иконка не сжималась */
+}
+
+/* На всякий случай, если SVG придет с фиксированными размерами из Figma,
+   мы принудительно делаем его чуть меньше эмоджи */
+.table-cherry-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
+/* Стиль самого числа */
+.cherry-count-text {
+    font-size: 15px; /* Чуть крупнее обычного текста */
+}
+
+/* Стили для Топ-3 (Золото, Серебро, Бронза) */
+.rank-1 { color: #eab308; font-weight: 900; font-size: 16px; } 
+.rank-2 { color: #9ca3af; font-weight: 900; font-size: 16px; } 
+.rank-3 { color: #d97706; font-weight: 900; font-size: 16px; }
+
+/* Мини-аватарка в таблице (первая буква имени) */
+.student-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+}
+
+.student-avatar-mini {
+    width: 32px;
+    height: 32px;
+    background-color: var(--bg-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Обновляем саму таблицу */
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    
+    /* ДОБАВИТЬ ЭТО: запрещает браузеру менять ширину колонок от балды */
+    table-layout: fixed; 
+}
+
+/* ДОБАВИТЬ НОВЫЙ БЛОК: Жестко фиксируем ширину колонок (в сумме 100%) */
+.leaderboard-table th:nth-child(1) { width: 15%; } /* Колонка "Место" */
+.leaderboard-table th:nth-child(2) { width: 45%; } /* Колонка "Студент" (самая широкая) */
+.leaderboard-table th:nth-child(3) { width: 20%; } /* Колонка "Группа" */
+.leaderboard-table th:nth-child(4) { width: 20%; } /* Колонка "Вишенки" */
+
+/* Класс для выделения "себя" в таблице */
+.leaderboard-table tr.current-user-row {
+    background-color: #fff1f2; /* Очень светлый красный фон, мягче чем cherry-bg */
+    position: relative; /* Чтобы спозиционировать полоску слева */
+}
+
+/* Легкая подсветка при наведении на "себя" */
+.leaderboard-table tr.current-user-row:hover {
+    background-color: #ffe4e6;
+}
+
+/* Красная полоска слева у выделенной строки */
+.leaderboard-table tr.current-user-row td:first-child {
+    border-left: 3px solid var(--cherry-red);
+    padding-left: 13px; /* Компенсируем ширину полоски (16px padding - 3px border) */
+}
+
+/* Немного выделяем жирностью ФИО залогиненного пользователя */
+.leaderboard-table tr.current-user-row .student-cell {
+    font-weight: 600;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 640px) {
+    .profile-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Учет активности | ВИШенки</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        
+        <div class="profile-card">
+            <div class="profile-left">
+                <div class="avatar-placeholder" id="user-avatar">
+                    <img src="images/avatarka.png" alt="Аватар пользователя" class="user-avatar-img">
+                </div>
+                
+                <div class="user-info">
+                    <h1 id="user-name">Загрузка...</h1>
+                    <p class="user-meta">
+                        <span id="user-group">...</span> • <span id="user-role">...</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="profile-right">
+                <div class="balance-container">
+                    <div class="cherry-icon">
+                        <img src="icons/wishenka.svg">
+                    </div>
+                    <div class="balance-badge" id="user-balance">0</div>
+                        <div class="balance-text">
+                            Текущий баланс <br> 
+                            «<span class="cherry-text">ВИШенок</span>»
+                        </div>
+                </div>
+            </div>
+        </div>
+
+    <div class="leaderboard-section">
+        <div class="leaderboard-header">
+            <h2>Рейтинг студентов</h2>
+            
+            <div class="leaderboard-controls">
+                <input type="text" id="search-input" placeholder="Поиск по ФИО или группе...">
+                
+                <select id="group-filter">
+                    <option value="">Все группы</option>
+                    <option value="ШЦТ-111">ШЦТ-111</option>
+                    <option value="ШЦТ-112">ШЦТ-112</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Место</th>
+                        <th>Студент</th>
+                        <th>Группа</th>
+                        <th>Вишенки</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <section class="activities-section">
+        <div class="section-header">
+            <h2>Ближайшие мероприятия</h2>
+            <span class="section-subtitle">Записывайтесь и получайте вишенки</span>
+        </div>
+        
+        <div class="activities-grid" id="activities-grid">
+            </div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
