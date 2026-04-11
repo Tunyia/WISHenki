@@ -1,6 +1,6 @@
 // ID текущего залогиненного пользователя (Алексей Смирнов)
 // В будущем этот ID будет приходить от FastAPI при авторизации
-const currentUserId = 1; 
+const currentUserId = 19; 
 
 // Шаблонные данные для лидерборда (в будущем придут в формате JSON от FastAPI)
 const mockLeaderboardData = [
@@ -21,7 +21,8 @@ const mockLeaderboardData = [
     { id: 15, fullName: "Студентович 9", group: "ШЦТ-112", cherries: 0 },
     { id: 16, fullName: "Студентович 10", group: "ШЦТ-112", cherries: 0 },
     { id: 17, fullName: "Студентович 10", group: "ШЦТ-112", cherries: 0 },
-    { id: 18, fullName: "Ченцов Артемий", group: "ШЦТ-111", cherries: 999 }
+    { id: 18, fullName: "Ченцов Артемий", group: "ШЦТ-111", cherries: 999 },
+    { id: 19, fullName: "Жмышенко Валерий", group: "ГЛЭК-111", cherries: 145}
 ];
 
 // Функция для обновления верхней личной карточки
@@ -178,8 +179,7 @@ function renderActivities(activities) {
                 <div class="activity-tags">${tagsHtml}</div>
                 <div class="activity-title">${activity.title}</div>
                 <div class="activity-organizer">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                    ${activity.organizer}
+                    Организатор: ${activity.organizer}
                 </div>
                 <div class="activity-description">${activity.description}</div>
             </div>
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // В будущем: const mockProfileData = await fetch('/api/users/me').then(r => r.json());
     const mockProfileData = {
         fullName: "Жмышенко Валерий",
-        group: "ШЦТ-111", // Исправил опечатку ЩЦТ -> ШЦТ для консистентности
+        group: "ГЛЭК-111", // Исправил опечатку ЩЦТ -> ШЦТ для консистентности
         role: "Студент",
         cherries: 145
     };

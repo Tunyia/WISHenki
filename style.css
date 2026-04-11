@@ -51,7 +51,7 @@ body {
 #activity-search, 
 #tag-filter {
     padding: 10px 16px;
-    border: 2px solid var(--border-color);
+    border: 3px solid var(--border-color);
     border-radius: var(--radius-md);
     font-family: inherit;
     font-size: 14px;
@@ -182,6 +182,7 @@ body {
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
+    text-align: left;
 }
 
 .leaderboard-table th, .leaderboard-table td { padding: 12px; font-size: 14px; }
@@ -190,7 +191,7 @@ body {
     font-weight: 500; 
     border-bottom: 2px solid var(--border-color); 
 }
-.leaderboard-table td { border-bottom: 1px solid var(--border-color); }
+.leaderboard-table td { border-bottom: 2px solid var(--border-color); }
 .leaderboard-table tbody tr:hover { background-color: #f9fafb; }
 
 /* Обычный ховер для всех строк */
@@ -310,7 +311,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding-top: 15px;
-    border-top: 1px solid var(--border-color);
+    border-top: 3px solid var(--border-color);
 }
 
 .activity-reward { display: flex; align-items: center; gap: 5px; font-weight: 600; }
