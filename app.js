@@ -103,6 +103,97 @@ function filterLeaderboard() {
     renderLeaderboard(filteredData);
 }
 
+const mockActivitiesData = [
+    {
+        id: 1,
+        title: "Хакатон «Code & Chill»",
+        organizer: "IT-Клуб",
+        description: "Разработка инновационных решений для университета за 24 часа. Приходи с командой или найди её на месте!",
+        // Добавили несколько категорий
+        categories: ["Программирование", "Хакатон", "IT"], 
+        base_reward: 50,
+        event_date: "15 Октября, 10:00"
+    },
+    {
+        id: 2,
+        title: "Лекция по GeoAI",
+        organizer: "Деканат",
+        description: "Обсуждаем современные тренды в геоаналитике, цифровые двойники городов и спутниковые снимки.",
+        categories: ["Наука", "Геодезия"],
+        base_reward: 15,
+        event_date: "18 Октября, 14:30"
+    },
+    {
+        id: 3,
+        title: "Волонтерство на Дне Открытых Дверей",
+        organizer: "Университет",
+        description: "Помощь в организации навигации для абитуриентов и их родителей. Нужны ответственные ребята.",
+        categories: ["Социальное", "Волонтерство", "ВУЗ"],
+        base_reward: 30,
+        event_date: "20 Октября, 09:00"
+    },
+    {
+        id: 4,
+        title: "Хакатон «Code & Chill»",
+        organizer: "IT-Клуб",
+        description: "Разработка инновационных решений для университета за 24 часа.",
+        categories: ["IT", "Хакатон"], 
+        base_reward: 50,
+        event_date: "15 Октября, 10:00"
+    },
+    {
+        id: 5,
+        title: "Лекция по Python",
+        organizer: "Деканат",
+        description: "Обсуждаем python!",
+        categories: ["Наука", "IT"],
+        base_reward: 15,
+        event_date: "18 Октября, 14:30"
+    }
+];
+
+// Вспомогательная функция для подбора цвета тега
+function getTagClass(tagName) {
+    const name = tagName.toLowerCase();
+    if (name.includes('it') || name.includes('программирование')) return 'tag-it';
+    if (name.includes('наука') || name.includes('лекция')) return 'tag-science';
+    if (name.includes('социальное') || name.includes('волонтер')) return 'tag-social';
+    return 'tag-default';
+}
+
+function renderActivities(activities) {
+    const grid = document.getElementById('activities-grid');
+    grid.innerHTML = '';
+
+    activities.forEach(activity => {
+        const card = document.createElement('div');
+        card.className = 'activity-card';
+        
+        const tagsHtml = activity.categories
+            .map(tag => `<span class="activity-tag ${getTagClass(tag)}">${tag}</span>`)
+            .join('');
+
+        card.innerHTML = `
+            <div>
+                <div class="activity-tags">${tagsHtml}</div>
+                <div class="activity-title">${activity.title}</div>
+                <div class="activity-organizer">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    ${activity.organizer}
+                </div>
+                <div class="activity-description">${activity.description}</div>
+            </div>
+            <div class="activity-footer">
+                <div class="activity-reward">
+                    ${activity.base_reward} <img src="icons/wishenka.svg" style="width: 16px;">
+                </div>
+                <div class="activity-date">${activity.event_date}</div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
 // ОСНОВНОЙ БЛОК: Запускаем всё, когда страница загрузилась
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -126,4 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Вешаем слушатели на строку поиска и селект, чтобы фильтровать без перезагрузки страницы
     document.getElementById('search-input').addEventListener('input', filterLeaderboard);
     document.getElementById('group-filter').addEventListener('change', filterLeaderboard);
+
+    // 5. Карточки мероприятий
+    renderActivities(mockActivitiesData);
 });

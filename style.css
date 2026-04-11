@@ -1,17 +1,20 @@
+/* --- 1. ПЕРЕМЕННЫЕ И ОСНОВА --- */
 :root {
-    --bg-color: #ebf1f5; /* Основной фон страницы — делаем его чуть темнее */
-    --card-bg: #ffffff;  /* Белая карточка */
+    --bg-color: #ebf1f5;
+    --card-bg: #ffffff;
     --text-main: #111827;
     --text-muted: #6b7280;
     --cherry-red: #dc2626;
-    --cherry-bg: #fee2e2; /* Светло-красный фон для рамочки */
+    --cherry-bg: #fee2e2;
     --border-color: #e5e7eb;
-    
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.03);
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --transition: 0.3s ease;
 }
 
-html {
-    overflow-y: scroll;
-}
+html { overflow-y: scroll; }
 
 body {
     font-family: 'Inter', sans-serif;
@@ -29,334 +32,309 @@ body {
     width: 100%;
 }
 
-/* Стили карточки профиля */
-.profile-card {
+/* --- 2. ОБЩИЕ КОМПОНЕНТЫ (БАЗА) --- */
+
+/* Базовый стиль всех белых блоков-карточек */
+.profile-card, 
+.leaderboard-section, 
+.activity-card, 
+.activities-control-panel {
     background-color: var(--card-bg);
-    border-radius: 16px;
-    padding: 16px 28px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 
-                0 1px 2px rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md), var(--shadow-sm);
+}
+
+/* Общие стили для полей ввода и селектов */
+.leaderboard-controls input,
+.leaderboard-controls select,
+#activity-search, 
+#tag-filter {
+    padding: 10px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: #fff;
+}
+
+.leaderboard-controls input:focus,
+.leaderboard-controls select:focus,
+#activity-search:focus, 
+#tag-filter:focus {
+    border-color: var(--cherry-red);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Уменьшаем общие отступы в панелях */
+.leaderboard-section, 
+.activities-control-panel {
+    padding: 16px 24px; /* Было 24px 32px, уменьшили высоту */
+}
+
+/* Фиксируем размер заголовков в блоках */
+.leaderboard-header h2, 
+.panel-info h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0; /* Убираем лишние отступы, которые толкали контент вниз */
+    color: var(--text-main);
+}
+
+/* Убираем отступ у подзаголовка, чтобы он прилип к h2 */
+.section-subtitle {
+    display: block;
+    margin-top: 4px; 
+    color: var(--text-muted);
+}
+
+/* --- 3. ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ --- */
+.profile-card {
+    padding: 16px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 20px;
-    transition: opacity 0.2s, transform 0.2s;
     margin-bottom: 24px;
+    transition: transform 0.2s;
 }
 
-.profile-left {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
+.profile-card:hover { transform: scale(1.01); }
 
-.profile-card:hover {
-    transform: scale(1.01);
-}
+.profile-left { display: flex; align-items: center; gap: 20px; }
 
 .avatar-placeholder {
     width: 100px;
     height: 100px;
-    /* background-color: #f3f4f6; */
     border: 4px dashed var(--border-color);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .user-avatar-img {
-    width: 100%;       /* Растянуть по ширине родителя */
-    height: 100%;      /* Растянуть по высоте родителя */
-    object-fit: cover; /* Магическое свойство: сохраняет пропорции, обрезая лишнее, если картинка не квадратная */
-    display: block;    /* Убирает странные отступы снизу */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .user-info h1 {
     margin: 0 0 4px 0;
     font-size: 24px;
     font-weight: 600;
+    line-height: 1.2;
+    color: var(--text-main);
 }
+.user-meta { margin: 0; font-size: 18px; color: var(--text-muted); font-weight: 600; }
 
-.user-meta {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-muted);
-}
-
-/* Стили блока с вишенками */
-.balance-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.cherry-icon {
-    display: flex;
-    align-items: center;
-    margin: 0px;
-}
+/* Баланс */
+.balance-container { display: flex; align-items: center; gap: 12px; }
 
 .balance-badge {
     background-color: #D9D9D9;
     color: var(--cherry-red);
-    
-    /* Жирное начертание и шрифт */
-    font-weight: 900; 
+    font-weight: 900;
     font-size: 28px;
-    
-    /* Внутренние отступы позволяют блоку тянуться под контент */
     padding: 6px 10px;
-    min-width: 40px; /* Минимальная ширина, чтобы одна цифра не была слишком узкой */
-    min-height: 32px;
-    text-align: center;
-    
-    /* Скругление и рамка */
-    border-radius: 10px;
-    /* border: 1.5px solid rgba(220, 38, 38, 0.1);  Полупрозрачная рамка */
-
-    /* Эффект углубления (Inner Shadow) */
-    /* Первый слой: легкая тень сверху, второй слой: свет снизу для объема */
-    box-shadow: 
-        inset 0 3px 0px rgba(0, 0, 0, 0.08);
-        /* inset 0 1px 0px rgba(0, 0, 0, 0.05); */
-    
-    /* Чтобы блок не схлопывался и правильно тянулся */
+    min-width: 44px;
+    border-radius: var(--radius-md);
+    box-shadow: inset 0 3px 0px rgba(0, 0, 0, 0.08);
     display: flex;
-    align-items: center;
     justify-content: center;
 }
 
-.balance-text {
-    font-size: 19px;
-    font-weight: 600;
-    color: var(--text-muted);
-    line-height: 1.3;
-}
-.cherry-text {
-    color: var(--cherry-red); /* Тот самый красный цвет */
-    /* text-shadow: 0 0 8px rgba(220, 38, 38, 0.2); Очень легкое красное сияние */
-}
+.balance-text { font-size: 19px; font-weight: 600; color: var(--text-muted); }
+.cherry-text { color: var(--cherry-red); }
 
-/* --- Секция Лидерборда --- */
-.leaderboard-section {
-    margin-top: 24px;
-    background-color: var(--card-bg);
-    border-radius: 16px;
-    padding: 24px 32px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 
-                0 1px 2px rgba(0, 0, 0, 0.06);
-    border: 1px solid var(--border-color);
-    margin-bottom: 24px;
-}
+/* --- 4. ЛИДЕРБОРД --- */
+.leaderboard-section { padding: 24px 32px; margin-bottom: 24px; }
 
 .leaderboard-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    flex-wrap: wrap; /* Чтобы на телефонах поиск падал на новую строку */
+    flex-wrap: wrap;
     gap: 16px;
 }
 
-.leaderboard-header h2 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-}
+.leaderboard-controls { display: flex; gap: 12px; flex-wrap: wrap; }
 
-/* Строка поиска и выпадающий список */
-.leaderboard-controls {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.leaderboard-controls input,
-.leaderboard-controls select {
-    padding: 10px 16px;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
-    background-color: #fff;
-}
-
-.leaderboard-controls input:focus,
-.leaderboard-controls select:focus {
-    border-color: var(--cherry-red); /* Подсветка при клике */
-}
-
-#group-filter {
-    /* 1. Убираем стандартную системную галочку */
+/* Общий стиль для всех выпадающих списков с кастомной стрелкой */
+#group-filter, #tag-filter {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-
-    /* 2. Оформляем само окошко */
-    padding: 10px 35px 10px 16px; /* Увеличиваем правый отступ для нашей стрелочки */
+    padding-right: 35px !important; /* Место под стрелочку */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: calc(100% - 12px) center !important;
     background-color: #ffffff;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    color: var(--text-main);
     cursor: pointer;
-    transition: all 0.2s ease;
-
-    /* 3. Рисуем свою галочку через background-image */
-    /* Ты можешь вставить сюда свою SVG иконку или использовать этот стандартный символ */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    
-    /* ВОТ ЗДЕСЬ МЫ ДВИГАЕМ ГАЛОЧКУ: 12px от правого края */
-    background-position: calc(100% - 12px) center; 
-}
-
-/* Эффект при наведении */
-#group-filter:hover {
-    border-color: var(--cherry-red);
-}
-
-/* Эффект при клике */
-#group-filter:focus {
-    outline: none;
-    border-color: var(--cherry-red);
-    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
 /* Таблица */
-.table-container {
-    overflow-x: auto; /* Горизонтальный скролл для мобилок */
-}
-
 .leaderboard-table {
     width: 100%;
     border-collapse: collapse;
-    text-align: left;
+    table-layout: fixed;
 }
 
-.leaderboard-table th {
-    padding: 12px 12px;
-    color: var(--text-muted);
-    font-weight: 500;
-    font-size: 13px;
-    border-bottom: 2px solid var(--border-color);
+.leaderboard-table th, .leaderboard-table td { padding: 12px; font-size: 14px; }
+.leaderboard-table th { 
+    color: var(--text-muted); 
+    font-weight: 500; 
+    border-bottom: 2px solid var(--border-color); 
+}
+.leaderboard-table td { border-bottom: 1px solid var(--border-color); }
+.leaderboard-table tbody tr:hover { background-color: #f9fafb; }
+
+/* Обычный ховер для всех строк */
+.leaderboard-table tbody tr:not(.current-user-row):hover {
+    background-color: #f9fafb;
+}
+/* Специальный ховер для "себя" */
+.leaderboard-table tr.current-user-row:hover {
+    background-color: #ffe4e6 !important; /* Более насыщенный розовый при наведении */
 }
 
-.leaderboard-table td {
-    padding: 12px;
-    font-size: 14px;
-    border-bottom: 1px solid var(--border-color);
-}
+/* Колонки таблицы */
+.leaderboard-table th:nth-child(1) { width: 15%; }
+.leaderboard-table th:nth-child(2) { width: 45%; }
+.leaderboard-table th:nth-child(3) { width: 20%; }
+.leaderboard-table th:nth-child(4) { width: 20%; }
 
-.leaderboard-table tbody tr:hover {
-    background-color: #f9fafb; /* Эффект наведения на строку */
-}
-
-.cherry-balance-cell {
-    display: flex;
-    align-items: center;
-    gap: 8px; /* Отступ между иконкой и числом */
-    font-weight: 600;
-    color: var(--cherry-red);
-}
-
-/* Контейнер для SVG внутри таблицы */
-.table-cherry-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0; /* Чтобы иконка не сжималась */
-}
-
-/* На всякий случай, если SVG придет с фиксированными размерами из Figma,
-   мы принудительно делаем его чуть меньше эмоджи */
-.table-cherry-icon {
-    width: 20px;
-    height: 20px;
-    display: block;
-}
-
-/* Стиль самого числа */
-.cherry-count-text {
-    font-size: 15px; /* Чуть крупнее обычного текста */
-}
-
-/* Стили для Топ-3 (Золото, Серебро, Бронза) */
-.rank-1 { color: #eab308; font-weight: 900; font-size: 16px; } 
-.rank-2 { color: #9ca3af; font-weight: 900; font-size: 16px; } 
-.rank-3 { color: #d97706; font-weight: 900; font-size: 16px; }
-
-/* Мини-аватарка в таблице (первая буква имени) */
-.student-cell {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 500;
-}
-
+.student-cell { display: flex; align-items: center; gap: 12px; font-weight: 500; }
 .student-avatar-mini {
-    width: 32px;
-    height: 32px;
+    width: 32px; height: 32px;
     background-color: var(--bg-color);
     border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--text-muted);
+}
+
+.cherry-balance-cell { display: flex; align-items: center; gap: 8px; color: var(--cherry-red); font-weight: 600; }
+
+/* Выделение себя */
+.current-user-row { background-color: #fff1f2 !important; }
+.current-user-row td:first-child { border-left: 3px solid var(--cherry-red); padding-left: 13px; }
+.current-user-row .student-cell { font-weight: 600; }
+
+/* Ранги */
+.rank-1 { color: #eab308; font-weight: 900; }
+.rank-2 { color: #9ca3af; font-weight: 900; }
+.rank-3 { color: #d97706; font-weight: 900; }
+
+/* --- 5. МЕРОПРИЯТИЯ --- */
+.activities-section { margin-bottom: 40px; }
+
+.activities-control-panel {
+    padding: 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.activities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.activity-card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    animation: fadeInUp 0.5s ease backwards;
+}
+
+.activity-card:hover {
+    transform: scale(1.03) rotate(1deg);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.07);
+    border-color: var(--cherry-red);
+}
+
+.activity-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px; /* Умеренный отступ до заголовка */
+}
+
+.activity-tag {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
+/* Цвета тегов */
+.tag-it { background: #d2dafc; color: #0a45e7; }
+.tag-science { background: #d1fac6; color: #15803d; }
+.tag-social { background: #fcd2d5; color: var(--cherry-red); }
+.tag-default { background: #dbdbdb; color: #475569; }
+
+.activity-title { font-size: 1.25rem; font-weight: 600; margin: 0 0 10px 0; line-height: 1.3; }
+
+.activity-organizer {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 12px;
+    gap: 4px;
+}
+
+.activity-description {
+    font-size: 0.9rem;
     color: var(--text-muted);
+    margin-bottom: 20px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-/* Обновляем саму таблицу */
-.leaderboard-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-    
-    /* ДОБАВИТЬ ЭТО: запрещает браузеру менять ширину колонок от балды */
-    table-layout: fixed; 
+.activity-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
 }
 
-/* ДОБАВИТЬ НОВЫЙ БЛОК: Жестко фиксируем ширину колонок (в сумме 100%) */
-.leaderboard-table th:nth-child(1) { width: 15%; } /* Колонка "Место" */
-.leaderboard-table th:nth-child(2) { width: 45%; } /* Колонка "Студент" (самая широкая) */
-.leaderboard-table th:nth-child(3) { width: 20%; } /* Колонка "Группа" */
-.leaderboard-table th:nth-child(4) { width: 20%; } /* Колонка "Вишенки" */
+.activity-reward { display: flex; align-items: center; gap: 5px; font-weight: 600; }
+.activity-date { font-size: 0.85rem; color: var(--text-muted); }
 
-/* Класс для выделения "себя" в таблице */
-.leaderboard-table tr.current-user-row {
-    background-color: #fff1f2; /* Очень светлый красный фон, мягче чем cherry-bg */
-    position: relative; /* Чтобы спозиционировать полоску слева */
+/* --- 6. АНИМАЦИИ И АДАПТИВНОСТЬ --- */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* Легкая подсветка при наведении на "себя" */
-.leaderboard-table tr.current-user-row:hover {
-    background-color: #ffe4e6;
-}
+.activity-card:nth-child(1) { animation-delay: 0.1s; }
+.activity-card:nth-child(2) { animation-delay: 0.2s; }
+.activity-card:nth-child(3) { animation-delay: 0.3s; }
+.activity-card:nth-child(4) { animation-delay: 0.4s; }
+.activity-card:nth-child(5) { animation-delay: 0.5s; }
+.activity-card:nth-child(6) { animation-delay: 0.6s; }
+.activity-card:nth-child(7) { animation-delay: 0.7s; }
+.activity-card:nth-child(8) { animation-delay: 0.8s; }
+.activity-card:nth-child(9) { animation-delay: 0.9s; }
+.activity-card:nth-child(10) { animation-delay: 1s; }
 
-/* Красная полоска слева у выделенной строки */
-.leaderboard-table tr.current-user-row td:first-child {
-    border-left: 3px solid var(--cherry-red);
-    padding-left: 13px; /* Компенсируем ширину полоски (16px padding - 3px border) */
-}
-
-/* Немного выделяем жирностью ФИО залогиненного пользователя */
-.leaderboard-table tr.current-user-row .student-cell {
-    font-weight: 600;
-}
-
-/* Адаптивность для мобильных */
 @media (max-width: 640px) {
-    .profile-card {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+    .profile-card { flex-direction: column; align-items: flex-start; }
+    .activities-control-panel { flex-direction: column; align-items: stretch; }
+    .leaderboard-header { flex-direction: column; align-items: stretch; }
 }

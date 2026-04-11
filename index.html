@@ -71,15 +71,26 @@
         </div>
     </div>
 
-    <section class="activities-section">
-        <div class="section-header">
+<section class="activities-section">
+    <div class="activities-control-panel">
+        <div class="panel-info">
             <h2>Ближайшие мероприятия</h2>
             <span class="section-subtitle">Записывайтесь и получайте вишенки</span>
         </div>
         
-        <div class="activities-grid" id="activities-grid">
-            </div>
-    </section>
+        <div class="panel-filters">
+            <input type="text" id="activity-search" placeholder="Поиск мероприятий...">
+            <select id="tag-filter">
+                <option value="">Все теги</option>
+                <option value="IT">IT</option>
+                <option value="Наука">Наука</option>
+                <option value="Социальное">Социальное</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="activities-grid" id="activities-grid"></div>
+</section>
 
     <script src="app.js"></script>
 </body>
