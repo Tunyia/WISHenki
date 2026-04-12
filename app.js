@@ -284,9 +284,9 @@ function openEventModal(activityId) {
             <table class="participants-table">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">№</th>
+                        <th style="width: 30px;">№</th>
                         <th>Студент</th>
-                        <th style="text-align: right; padding-right: 12px;">Группа</th>
+                        <th style="text-align: right; padding-right: 8px;">Группа</th>
                     </tr>
                 </thead>
                 <tbody>

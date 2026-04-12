@@ -358,6 +358,8 @@ body {
     box-shadow: 0 20px 50px rgba(0,0,0,0.2);
     animation: modalSlideIn 0.3s ease-out;
 }
+.modal-content::-webkit-scrollbar { width: 6px; }
+.modal-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
 .modal-content.closing {
     animation: modalSlideOut 0.3s ease-in forwards;
@@ -434,7 +436,7 @@ body {
 .modal-grid {
     display: grid;
     grid-template-columns: 1fr 1.2fr; /* Теперь правая часть чуть шире левой */
-    gap: 30px;
+    gap: 15px;
     align-items: start;
 }
 
@@ -489,7 +491,7 @@ body {
 /* Стилизация скроллбара, чтобы он был тонким и аккуратным */
 .participants-stack::-webkit-scrollbar { width: 1px; }
 .participants-scroll-area::-webkit-scrollbar { width: 6px; }
-.participants-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.participants-scroll-area::-webkit-scrollbar-thumb { background: #ced0d4; border-radius: 10px; } /*#cbd5e1*/
 .participants-stack::-webkit-scrollbar-thumb {
     background: #d1d5db;
     border-radius: 10px;
@@ -511,7 +513,7 @@ body {
 }
 .participants-table th:nth-child(1),
 .participants-table td:nth-child(1) {
-    width: 25px;
+    width: 5px;
     padding-left: 8px;
     text-align: center;
     color: var(--text-muted);
