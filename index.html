@@ -72,26 +72,75 @@
         </div>
     </div>
 
-<section class="activities-section">
-    <div class="activities-control-panel">
-        <div class="panel-info">
-            <h2>Ближайшие мероприятия</h2>
-            <span class="section-subtitle">Записывайтесь и получайте вишенки</span>
+    <section class="activities-section">
+        <div class="activities-control-panel">
+            <div class="panel-info">
+                <h2>Ближайшие мероприятия</h2>
+                <span class="section-subtitle">Записывайтесь, участвуйте и получайте вишенки!</span>
+            </div>
+            
+            <div class="panel-filters">
+                <input type="text" id="activity-search" placeholder="Поиск мероприятий...">
+                <select id="tag-filter">
+                    <option value="">Все теги</option>
+                    <option value="IT">IT</option>
+                    <option value="Наука">Наука</option>
+                    <option value="Социальное">Социальное</option>
+                </select>
+            </div>
         </div>
         
-        <div class="panel-filters">
-            <input type="text" id="activity-search" placeholder="Поиск мероприятий...">
-            <select id="tag-filter">
-                <option value="">Все теги</option>
-                <option value="IT">IT</option>
-                <option value="Наука">Наука</option>
-                <option value="Социальное">Социальное</option>
-            </select>
+        <div class="activities-grid" id="activities-grid"></div>
+    </section>
+
+    <div id="event-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            
+            <div class="modal-gallery">
+                <button id="prev-img" class="nav-btn">❮</button>
+                <button id="next-img" class="nav-btn">❯</button>
+                
+                <div class="images-wrapper" id="images-wrapper"></div>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-header-info">
+                    <div id="modal-tags" class="activity-tags"></div>
+                    <h1 id="modal-title">Название мероприятия</h1>
+                    <div class="modal-meta">
+                        <span id="modal-organizer"></span> • <span id="modal-date"></span>
+                    </div>
+                </div>
+
+                <div class="modal-grid">
+                    <div class="modal-description">
+                        <h3>Об описании</h3>
+                        <p id="modal-desc-full">Полное описание мероприятия подтянется сюда...</p>
+                        
+                        <div class="reward-highlight">
+                            <span>Награда за участие:</span>
+                            <div class="activity-reward">
+                                <span id="modal-reward">0</span>
+                                <img src="icons/wishenka.svg" alt="cherry" style="width: 20px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-participants">
+                        <h3>Уже записались</h3>
+                        <div id="participants-list" class="participants-stack">
+                            </div>
+                        <div class="slots-info">Осталось мест: <strong id="modal-slots">12/20</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-register">Записаться на мероприятие</button>
+            </div>
         </div>
     </div>
-    
-    <div class="activities-grid" id="activities-grid"></div>
-</section>
 
     <script src="app.js"></script>
 </body>

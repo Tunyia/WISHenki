@@ -212,10 +212,12 @@ body {
 .student-cell { display: flex; align-items: center; gap: 12px; font-weight: 500; }
 .student-avatar-mini {
     width: 32px; height: 32px;
-    background-color: var(--bg-color);
+    flex-shrink: 0;
+    background-color: var(--bg-color); /* var(--cherry-red); */
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 12px; color: var(--text-muted);
+    font-size: 12px; color: var(--text-muted); font-weight: bold;
+    aspect-ratio: 1 / 1;
 }
 
 .cherry-balance-cell { display: flex; align-items: center; gap: 8px; color: var(--cherry-red); font-weight: 600; }
@@ -256,6 +258,7 @@ body {
     justify-content: space-between;
     transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
     animation: fadeInUp 0.5s ease backwards;
+    cursor: pointer;
 }
 
 .activity-card:hover {
@@ -316,6 +319,263 @@ body {
 
 .activity-reward { display: flex; align-items: center; gap: 5px; font-weight: 600; }
 .activity-date { font-size: 0.85rem; color: var(--text-muted); }
+
+/* Модальное окно мероприятия */
+/* Оверлей (фон) */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    
+    display: flex; 
+    visibility: hidden; /* Скрывает элемент визуально и для кликов */
+    opacity: 0;
+    
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: opacity 0.3s ease, visibility 0.3s; 
+    pointer-events: none; /* Пропускает клики сквозь себя */
+}
+
+.modal-overlay.active {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto; /* Начинает принимать клики */
+}
+
+/* Само окно */
+.modal-content {
+    background: var(--card-bg);
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    border-radius: 24px;
+    position: relative;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.modal-content.closing {
+    animation: modalSlideOut 0.3s ease-in forwards;
+}
+
+@keyframes modalSlideIn {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+@keyframes modalSlideOut {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(30px); opacity: 0; }
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px; right: 20px;
+    background: white; border: none;
+    width: 35px; height: 35px;
+    border-radius: 50%; cursor: pointer;
+    font-size: 24px; z-index: 10;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Галерея */
+.modal-gallery {
+    position: relative;
+    height: 300px;
+    background: #111;
+    overflow: hidden;
+}
+.modal-gallery img { width: 100%; height: 100%; object-fit: cover; }
+
+.images-wrapper {
+    display: flex;
+    height: 100%;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Мягкое движение */
+    will-change: transform;
+}
+
+.images-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    flex-shrink: 0; /* Чтобы картинки не сжимались, а выстраивались в ряд */
+}
+
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 60px;
+    cursor: pointer;
+    font-size: 20px;
+    transition: all 0.2s;
+    z-index: 5;
+    display: none; /* Скрыты по умолчанию */
+}
+
+.nav-btn:hover { background: rgba(255, 255, 255, 0.4); }
+#prev-img { left: 0; border-radius: 0 8px 8px 0; }
+#next-img { right: 0; border-radius: 8px 0 0 8px; }
+
+/* Видимость через JS */
+.nav-btn.visible { display: block; }
+
+/* Сетка внутри модалки */
+.modal-body { padding: 30px; }
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr; /* Теперь правая часть чуть шире левой */
+    gap: 30px;
+    align-items: start;
+}
+
+.reward-highlight {
+    margin-top: 20px;
+    padding: 15px;
+    padding-left: 20px;
+    padding-right: 30px;
+    background: #e9dadb;
+    border-radius: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+/* Список участников */
+/*.modal-participants {
+    display: flex;
+    flex-direction: column;
+    background: #f9fafb;
+    border-radius: 16px;
+    padding: 20px;
+    padding-top: -50px;
+    border: 3px solid var(--border-color);
+} */
+ /* Общий контейнер блока участников */
+.modal-participants {
+    background: var(--border-color);/* var(--card-bg); */
+    border-radius: 16px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+.modal-participants h3 {
+    margin: 16px 0 8px 6px;
+    font-size: 18px;
+    color: var(--text-main);
+}
+.slots-info {
+    margin: 0 0 0 6px;
+}
+
+.participants-stack {
+    max-height: 270px; /* Принудительно ограничиваем */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+/* Стилизация скроллбара, чтобы он был тонким и аккуратным */
+.participants-stack::-webkit-scrollbar { width: 1px; }
+.participants-scroll-area::-webkit-scrollbar { width: 6px; }
+.participants-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.participants-stack::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+.participants-scroll-area {
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background-color: var(--border-color) /* #f8fafc;  Светлый фон (голубовато-серый), выделяющий таблицу */
+}
+
+/* Стилизация мини-таблицы внутри модалки */
+.participants-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    table-layout: auto; /* Позволяет колонкам подстраиваться под контент */
+}
+.participants-table th:nth-child(1),
+.participants-table td:nth-child(1) {
+    width: 25px;
+    padding-left: 8px;
+    text-align: center;
+    color: var(--text-muted);
+}
+.participants-table th {
+    top: 0;
+    background: #f1f5f9; /* Чуть темнее основного фона таблицы */
+    z-index: 10;
+    color: var(--text-main);
+    font-weight: 600;
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+.participants-table td {
+    padding: 8px 8px; /* Уменьшили расстояние между строками */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06); /* Теперь разделитель виден */
+    vertical-align: middle;
+    background: #f1f5f9;
+}
+
+.participants-table tbody tr:last-child td {
+    border-bottom: none; /* Убираем лишнюю полоску у последнего элемента */
+}
+/*.participants-table tbody tr:nth-child(even) {
+    background-color: #fcfcfc;
+}*/
+/* .participants-table tbody tr:hover {
+     background-color: ;  Подсветка при наведении 
+} */
+
+
+.participant-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 2px;
+    background: white;
+    border-radius: 10px;
+    border: 3px solid rgba(0,0,0,0.03);
+    font-size: 13px;
+    transition: transform 0.2s;
+}
+.participant-item:hover {
+    transform: translateX(5px); /* Эффект при наведении */
+}
+
+/* Футер с кнопкой */
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid var(--border-color);
+    position: sticky; bottom: 0;
+    background: white;
+}
+
+.btn-register {
+    width: 100%;
+    padding: 15px;
+    background: var(--cherry-red);
+    color: white; border: none;
+    border-radius: 12px; font-weight: 700;
+    cursor: pointer; transition: transform 0.2s;
+}
+
+.btn-register:hover { transform: scale(1.02); background: #be123c; }
 
 /* --- 6. АНИМАЦИИ И АДАПТИВНОСТЬ --- */
 @keyframes fadeInUp {
