@@ -1,29 +1,23 @@
 // ID текущего залогиненного пользователя (Алексей Смирнов)
 // В будущем этот ID будет приходить от FastAPI при авторизации
-const currentUserId = 19; 
+// Для демо: можно поменять на любой существующий student id из БД
+const currentUserId = 1; 
 
-// Шаблонные данные для лидерборда (в будущем придут в формате JSON от FastAPI)
-const mockLeaderboardData = [
-    { id: 1, fullName: "Алексей Смирнов", group: "ШЦТ-111", cherries: 114 },
-    { id: 2, fullName: "Екатерина Иванова", group: "ШЦТ-112", cherries: 130 },
-    { id: 3, fullName: "Иван Петров", group: "ШЦТ-111", cherries: 115 },
-    { id: 4, fullName: "Анна Сидорова", group: "ШЦТ-112", cherries: 90 },
-    { id: 5, fullName: "Дмитрий Волков", group: "ШЦТ-111", cherries: 85 },
-    { id: 6, fullName: "Волк Дмитриев", group: "ШЦТ-111", cherries: 85 },
-    { id: 7, fullName: "Студентович 1", group: "ШЦТ-111", cherries: 0 },
-    { id: 8, fullName: "Студентович 2", group: "ШЦТ-111", cherries: 0 },
-    { id: 9, fullName: "Студентович 3", group: "ШЦТ-111", cherries: 0 },
-    { id: 10, fullName: "Студентович 4", group: "ШЦТ-111", cherries: 0 },
-    { id: 11, fullName: "Студентович 5", group: "ШЦТ-111", cherries: 0 },
-    { id: 12, fullName: "Студентович 6", group: "ШЦТ-111", cherries: 0 },
-    { id: 13, fullName: "Студентович 7", group: "ШЦТ-111", cherries: 0 },
-    { id: 14, fullName: "Студентович 8", group: "ШЦТ-111", cherries: 0 },
-    { id: 15, fullName: "Студентович 9", group: "ШЦТ-112", cherries: 0 },
-    { id: 16, fullName: "Студентович 10", group: "ШЦТ-112", cherries: 0 },
-    { id: 17, fullName: "Студентович 10", group: "ШЦТ-112", cherries: 0 },
-    { id: 18, fullName: "Ченцов Артемий", group: "ШЦТ-111", cherries: 999 },
-    { id: 19, fullName: "Жмышенко Валерий", group: "ГЛЭК-111", cherries: 145}
-];
+const API_BASE = 'http://127.0.0.1:8000';
+
+async function fetchJson(path) {
+    const res = await fetch(`${API_BASE}${path}`, {
+        headers: { 'Accept': 'application/json' },
+    });
+    if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status} ${res.statusText}${text ? `: ${text}` : ''}`);
+    }
+    return res.json();
+}
+
+// Данные приходят с API; этот массив нужен как общий источник для рендера/фильтра
+const mockLeaderboardData = [];
 
 // Имитация базы данных студентов
 const mockStudents = [
@@ -41,54 +35,7 @@ const mockStudents = [
     { id: 12, name: "Павел Дуров", group: "ШЦТ-111", initials: "ПД" }
 ];
 
-const mockActivitiesData = [
-    {
-        id: 1,
-        title: "Хакатон «Code & Chill»",
-        organizer: "IT-Клуб",
-        description: "Разработка инновационных решений для университета за 24 часа. Приходи с командой или найди её на месте!",
-        // Добавили несколько категорий
-        categories: ["Программирование", "Хакатон", "IT"], 
-        base_reward: 50,
-        event_date: "15 Октября, 10:00"
-    },
-    {
-        id: 2,
-        title: "Лекция по GeoAI",
-        organizer: "Деканат",
-        description: "Обсуждаем современные тренды в геоаналитике, цифровые двойники городов и спутниковые снимки.",
-        categories: ["Наука", "Геодезия"],
-        base_reward: 15,
-        event_date: "18 Октября, 14:30"
-    },
-    {
-        id: 3,
-        title: "Волонтерство на Дне Открытых Дверей",
-        organizer: "Университет",
-        description: "Помощь в организации навигации для абитуриентов и их родителей. Нужны ответственные ребята.",
-        categories: ["Социальное", "Волонтерство", "ВУЗ"],
-        base_reward: 30,
-        event_date: "20 Октября, 09:00"
-    },
-    {
-        id: 4,
-        title: "Хакатон «Code & Chill»",
-        organizer: "IT-Клуб",
-        description: "Разработка инновационных решений для университета за 24 часа.",
-        categories: ["IT", "Хакатон"], 
-        base_reward: 50,
-        event_date: "15 Октября, 10:00"
-    },
-    {
-        id: 5,
-        title: "Лекция по Python",
-        organizer: "Деканат",
-        description: "Обсуждаем python!",
-        categories: ["Наука", "IT"],
-        base_reward: 15,
-        event_date: "18 Октября, 14:30"
-    }
-];
+let activitiesData = [];
 
 // Функция для обновления верхней личной карточки
 function renderProfile(data) {
@@ -178,6 +125,44 @@ function getTagClass(tagName) {
     return 'tag-default';
 }
 
+function renderActivityTagOptions(allActivities) {
+    const select = document.getElementById('tag-filter');
+    if (!select) return;
+
+    const existing = new Set();
+    const tags = [];
+    allActivities.forEach(a => {
+        (a.categories || []).forEach(t => {
+            const key = String(t).trim();
+            if (!key) return;
+            if (existing.has(key)) return;
+            existing.add(key);
+            tags.push(key);
+        });
+    });
+    tags.sort((a, b) => a.localeCompare(b, 'ru'));
+
+    select.innerHTML = `<option value="">Все теги</option>` + tags.map(t => `<option value="${t}">${t}</option>`).join('');
+}
+
+function filterActivities() {
+    const searchText = (document.getElementById('activity-search')?.value || '').toLowerCase();
+    const filterTag = document.getElementById('tag-filter')?.value || '';
+
+    const filtered = activitiesData.filter(a => {
+        const title = (a.title || '').toLowerCase();
+        const organizer = (a.organizer || '').toLowerCase();
+        const desc = (a.description || '').toLowerCase();
+        const matchText = !searchText || title.includes(searchText) || organizer.includes(searchText) || desc.includes(searchText);
+
+        const cats = a.categories || [];
+        const matchTag = !filterTag || cats.includes(filterTag);
+        return matchText && matchTag;
+    });
+
+    renderActivities(filtered);
+}
+
 let currentImages = [];
 let currentImgIndex = 0;
 function updateGallery() {
@@ -243,10 +228,12 @@ function closeModal() {
 }
 
 function openEventModal(activityId) {
-    const activity = mockActivitiesData.find(a => a.id === activityId);
+    const activity = activitiesData.find(a => a.id === activityId);
     if (!activity) return;
 
-    currentImages = activity.images || ["photos/kot.png", "photos/kot2.png", "photos/nekot.png"];
+    currentImages = activity.images && activity.images.length > 0
+        ? activity.images
+        : ["photos/kot.png", "photos/kot2.png", "photos/nekot.png"];
     currentImgIndex = 0;
 
     // Генерируем все картинки сразу в ленту
@@ -345,28 +332,67 @@ function renderActivities(activities) {
 
 // ОСНОВНОЙ БЛОК: Запускаем всё, когда страница загрузилась
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // 1. Имитация запроса к FastAPI для получения данных профиля
-    // В будущем: const mockProfileData = await fetch('/api/users/me').then(r => r.json());
-    const mockProfileData = {
-        fullName: "Жмышенко Валерий",
-        group: "ГЛЭК-111", // Исправил опечатку ЩЦТ -> ШЦТ для консистентности
-        role: "Студент",
-        cherries: 145
-    };
 
-    // 2. Обновляем верхнюю личную карточку
-    renderProfile(mockProfileData);
+    (async () => {
+        // 1) Лидерборд: всегда пытаемся взять реальный список студентов.
+        // Если список недоступен (бэк не запущен) — только тогда падаем на моки.
+        try {
+            const students = await fetchJson('/api/students?skip=0&limit=500');
+            const leaderboard = students
+                .map(s => ({
+                    id: s.id,
+                    fullName: s.full_name,
+                    group: s.study_group,
+                    cherries: s.available_points,
+                }))
+                .sort((a, b) => b.cherries - a.cherries);
 
-    // 3. Отрисовываем лидерборд в первый раз (функция сама отсортирует моковые данные)
-    // Перед первым рендером полезно отсортировать данные
-    mockLeaderboardData.sort((a, b) => b.cherries - a.cherries);
-    renderLeaderboard(mockLeaderboardData);
+            mockLeaderboardData.length = 0;
+            mockLeaderboardData.push(...leaderboard);
+        } catch (e) {
+            console.warn('Не удалось загрузить список студентов с API, используем моки.', e);
+        }
 
-    // 4. Вешаем слушатели на строку поиска и селект, чтобы фильтровать без перезагрузки страницы
+        mockLeaderboardData.sort((a, b) => b.cherries - a.cherries);
+        renderLeaderboard(mockLeaderboardData);
+
+        // 1b) Мероприятия
+        try {
+            activitiesData = await fetchJson('/api/activities?skip=0&limit=500');
+            renderActivityTagOptions(activitiesData);
+            filterActivities();
+        } catch (e) {
+            console.warn('Не удалось загрузить мероприятия с API.', e);
+            activitiesData = [];
+            renderActivityTagOptions(activitiesData);
+            renderActivities([]);
+        }
+
+        // 2) Профиль: пробуем взять "себя". Если такого id пока нет — показываем "пустой" профиль.
+        try {
+            const me = await fetchJson(`/api/students/${currentUserId}`);
+            renderProfile({
+                fullName: me.full_name,
+                group: me.study_group,
+                role: 'Студент',
+                cherries: me.available_points,
+            });
+        } catch (e) {
+            console.warn('Профиль не найден в API (вероятно, в БД ещё нет такого студента).', e);
+            renderProfile({
+                fullName: "Профиль не найден",
+                group: "—",
+                role: "—",
+                cherries: 0
+            });
+        }
+    })();
+
+    // Фильтры таблицы
     document.getElementById('search-input').addEventListener('input', filterLeaderboard);
     document.getElementById('group-filter').addEventListener('change', filterLeaderboard);
 
-    // 5. Карточки мероприятий
-    renderActivities(mockActivitiesData);
+    // Фильтры мероприятий (как у рейтинга)
+    document.getElementById('activity-search')?.addEventListener('input', filterActivities);
+    document.getElementById('tag-filter')?.addEventListener('change', filterActivities);
 });
