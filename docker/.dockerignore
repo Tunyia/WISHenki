@@ -1,0 +1,5 @@
+backend/project_vuz/.venv
+backend/project_vuz/__pycache__
+**/.git
+**/.env
+*.md

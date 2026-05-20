@@ -7,7 +7,23 @@
 
 Фронт лежит в корне репозитория и ходит в API по HTTP.
 
-## Быстрый старт (Windows / PowerShell)
+## Запуск всего проекта одной командой (рекомендуется)
+
+Из **корня репозитория** `WISHenki` (не из этой папки):
+
+```powershell
+docker compose up --build
+```
+
+Сайт: **http://127.0.0.1:8080** · API: **http://127.0.0.1:8000/health**
+
+Демо-данные: `docker compose exec api python seed.py`
+
+Подробнее: [DOCKER.md](../../DOCKER.md) в корне репозитория.
+
+---
+
+## Быстрый старт (только БД в Docker + API/фронт локально)
 ### 1) Поднять базу данных (Postgres) в Docker
 Из папки `backend/project_vuz`:
 

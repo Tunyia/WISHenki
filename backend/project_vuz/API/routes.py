@@ -4,10 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from API.deps import get_current_student
 from core.database import get_db
-from models.activity import Activity
+from core.points import sync_student_points
+from models.activity import Activity, ActivityAttendance, ActivityEnrollment
 from models.rating import Item, Student, Transaction
-from Shemas.activity import ActivityCreate, ActivityResponse
+from Shemas.activity import (
+    ActivityCreate,
+    ActivityParticipantResponse,
+    ActivityResponse,
+)
 from Shemas.rating import (
     ItemCreate,
     ItemResponse,
@@ -20,13 +26,26 @@ from Shemas.rating import (
 router = APIRouter()
 
 
+def _student_response(db: Session, student: Student) -> StudentResponse:
+    sync_student_points(db, student)
+    db.commit()
+    db.refresh(student)
+    return student
+
+
 @router.get("/students", response_model=list[StudentResponse])
 def list_students(
     db: Annotated[Session, Depends(get_db)],
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
 ):
-    return db.query(Student).offset(skip).limit(limit).all()
+    students = db.query(Student).offset(skip).limit(limit).all()
+    for st in students:
+        sync_student_points(db, st)
+    db.commit()
+    for st in students:
+        db.refresh(st)
+    return students
 
 
 @router.post("/students", response_model=StudentResponse, status_code=201)
@@ -54,7 +73,7 @@ def get_student(
     student = db.get(Student, student_id)
     if student is None:
         raise HTTPException(status_code=404, detail="Студент не найден")
-    return student
+    return _student_response(db, student)
 
 
 @router.get("/items", response_model=list[ItemResponse])
@@ -107,16 +126,12 @@ def create_transaction(
     if item is None:
         raise HTTPException(status_code=404, detail="Предмет не найден")
 
-    new_available = student.available_points + payload.points_change
-    if new_available < 0:
+    sync_student_points(db, student)
+    if payload.points_change < 0 and student.available_points < -payload.points_change:
         raise HTTPException(
             status_code=400,
             detail="Недостаточно доступных баллов для этой операции",
         )
-
-    if payload.points_change > 0:
-        student.total_points += payload.points_change
-    student.available_points = new_available
 
     tx = Transaction(
         student_id=payload.student_id,
@@ -125,7 +140,10 @@ def create_transaction(
     )
     db.add(tx)
     db.commit()
+    sync_student_points(db, student)
+    db.commit()
     db.refresh(tx)
+    db.refresh(student)
     return tx
 
 
@@ -134,8 +152,17 @@ def list_activities(
     db: Annotated[Session, Depends(get_db)],
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
+    time: str | None = Query(
+        None,
+        description="upcoming — предстоящие, past — прошедшие",
+    ),
 ):
-    return db.query(Activity).order_by(Activity.id.desc()).offset(skip).limit(limit).all()
+    q = db.query(Activity)
+    if time == "upcoming":
+        q = q.filter(Activity.is_completed.is_(False))
+    elif time == "past":
+        q = q.filter(Activity.is_completed.is_(True))
+    return q.order_by(Activity.id.desc()).offset(skip).limit(limit).all()
 
 
 @router.post("/activities", response_model=ActivityResponse, status_code=201)
@@ -151,6 +178,7 @@ def create_activity(
         base_reward=payload.base_reward,
         event_date=payload.event_date,
         images=payload.images,
+        is_completed=payload.is_completed,
     )
     db.add(activity)
     db.commit()
@@ -167,3 +195,103 @@ def get_activity(
     if activity is None:
         raise HTTPException(status_code=404, detail="Мероприятие не найдено")
     return activity
+
+
+@router.get(
+    "/activities/{activity_id}/participants",
+    response_model=list[ActivityParticipantResponse],
+)
+def list_activity_participants(
+    activity_id: int,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Записавшиеся на предстоящее мероприятие."""
+    activity = db.get(Activity, activity_id)
+    if activity is None:
+        raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+    if activity.is_completed:
+        raise HTTPException(
+            status_code=400,
+            detail="Для прошедшего мероприятия используйте /attendees",
+        )
+    students = (
+        db.query(Student)
+        .join(ActivityEnrollment, ActivityEnrollment.student_id == Student.id)
+        .filter(ActivityEnrollment.activity_id == activity_id)
+        .order_by(ActivityEnrollment.id.asc())
+        .all()
+    )
+    return [
+        ActivityParticipantResponse(
+            student_id=s.id,
+            full_name=s.full_name,
+            study_group=s.study_group,
+        )
+        for s in students
+    ]
+
+
+@router.get(
+    "/activities/{activity_id}/attendees",
+    response_model=list[ActivityParticipantResponse],
+)
+def list_activity_attendees(
+    activity_id: int,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Посетившие прошедшее мероприятие (по ним начисляются вишенки)."""
+    activity = db.get(Activity, activity_id)
+    if activity is None:
+        raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+    if not activity.is_completed:
+        raise HTTPException(
+            status_code=400,
+            detail="Мероприятие ещё не завершено — список записавшихся: /participants",
+        )
+    students = (
+        db.query(Student)
+        .join(ActivityAttendance, ActivityAttendance.student_id == Student.id)
+        .filter(ActivityAttendance.activity_id == activity_id)
+        .order_by(ActivityAttendance.id.asc())
+        .all()
+    )
+    return [
+        ActivityParticipantResponse(
+            student_id=s.id,
+            full_name=s.full_name,
+            study_group=s.study_group,
+        )
+        for s in students
+    ]
+
+
+@router.post("/activities/{activity_id}/enroll", status_code=201)
+def enroll_in_activity(
+    activity_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    student: Annotated[Student, Depends(get_current_student)],
+):
+    activity = db.get(Activity, activity_id)
+    if activity is None:
+        raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+    if activity.is_completed:
+        raise HTTPException(
+            status_code=400,
+            detail="На прошедшее мероприятие записаться нельзя",
+        )
+    exists = (
+        db.query(ActivityEnrollment)
+        .filter(
+            ActivityEnrollment.activity_id == activity_id,
+            ActivityEnrollment.student_id == student.id,
+        )
+        .first()
+    )
+    if exists is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Вы уже записаны на это мероприятие",
+        )
+    db.add(ActivityEnrollment(activity_id=activity_id, student_id=student.id))
+    db.commit()
+    return {"ok": True}

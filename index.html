@@ -12,30 +12,47 @@
 <body>
     <div class="container">
         
-        <div class="profile-card">
-            <div class="profile-left">
-                <div class="avatar-placeholder" id="user-avatar">
-                    <img src="images/avatarka.png" alt="Аватар пользователя" class="user-avatar-img">
+        <div class="profile-card" id="profile-card">
+            <div id="profile-guest" class="profile-guest">
+                <div class="profile-left">
+                    <div class="avatar-placeholder avatar-placeholder--guest" id="guest-avatar" aria-hidden="true">
+                        <span class="avatar-guest-icon">?</span>
+                    </div>
+                    <div class="user-info">
+                        <p class="profile-guest-message">Войдите в аккаунт, чтобы видеть профиль</p>
+                    </div>
                 </div>
-                
-                <div class="user-info">
-                    <h1 id="user-name">Загрузка...</h1>
-                    <p class="user-meta">
-                        <span id="user-group">...</span> • <span id="user-role">...</span>
-                    </p>
+                <div class="profile-right profile-guest-actions">
+                    <button type="button" class="btn-auth-open" id="btn-open-auth">Войти</button>
                 </div>
             </div>
-            
-            <div class="profile-right">
-                <div class="balance-container">
-                    <div class="cherry-icon">
-                        <img src="icons/wishenka.svg">
+
+            <div id="profile-user" class="profile-user" hidden>
+                <div class="profile-left">
+                    <div class="avatar-placeholder" id="user-avatar">
+                        <img src="images/avatarka.png" alt="Аватар пользователя" class="user-avatar-img" id="user-avatar-img">
                     </div>
-                    <div class="balance-badge" id="user-balance">0</div>
-                        <div class="balance-text">
-                            Текущий баланс <br> 
-                            «<span class="cherry-text">ВИШенок</span>»
+                    
+                    <div class="user-info">
+                        <h1 id="user-name">Загрузка...</h1>
+                        <p class="user-meta">
+                            <span id="user-group">...</span> • <span id="user-role">...</span>
+                        </p>
+                        <button type="button" class="btn-logout" id="btn-logout">Выйти</button>
+                    </div>
+                </div>
+                
+                <div class="profile-right">
+                    <div class="balance-container">
+                        <div class="cherry-icon">
+                            <img src="icons/wishenka.svg" alt="">
                         </div>
+                        <div class="balance-badge" id="user-balance">0</div>
+                            <div class="balance-text">
+                                Текущий баланс <br> 
+                                «<span class="cherry-text">ВИШенок</span>»
+                            </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,51 +110,143 @@
         <div class="activities-grid" id="activities-grid"></div>
     </section>
 
-    <div id="event-modal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="close-modal">&times;</button>
-            
-            <div class="modal-gallery">
-                <button id="prev-img" class="nav-btn">❮</button>
-                <button id="next-img" class="nav-btn">❯</button>
-                
-                <div class="images-wrapper" id="images-wrapper"></div>
+    <div class="past-events-toggle-bar" id="past-events-toggle-bar">
+        <button
+            type="button"
+            class="btn-toggle-past-events"
+            id="btn-toggle-past-events"
+            aria-expanded="false"
+            aria-controls="past-events-panel"
+        >
+            <span class="btn-toggle-past-events-label">Прошедшие мероприятия</span>
+            <span class="toggle-chevron" aria-hidden="true">▼</span>
+        </button>
+    </div>
+
+    <section id="past-events-panel" class="activities-section activities-section--past" hidden>
+        <div class="activities-control-panel">
+            <div class="panel-info">
+                <h2>Прошедшие мероприятия</h2>
+                <span class="section-subtitle">Архив: кто посетил и сколько вишенок получил</span>
+            </div>
+            <div class="panel-filters">
+                <input type="text" id="past-activity-search" placeholder="Поиск мероприятий...">
+                <select id="past-tag-filter">
+                    <option value="">Все теги</option>
+                </select>
+            </div>
+        </div>
+        <div class="activities-grid" id="past-activities-grid"></div>
+    </section>
+
+    <div id="auth-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content auth-modal-content">
+            <button type="button" class="close-auth-modal" id="close-auth-modal" aria-label="Закрыть">&times;</button>
+
+            <div class="auth-modal-body">
+                <h2 class="auth-modal-title" id="auth-modal-title">Вход в аккаунт</h2>
+                <p class="auth-modal-subtitle">Вишенки учёта активности</p>
+
+                <div id="auth-form-error" class="auth-form-error" role="alert" hidden></div>
+
+                <form id="form-login" class="auth-form" autocomplete="on">
+                    <label class="auth-label">Электронная почта
+                        <input type="email" id="login-email" name="email" required placeholder="you@institute.ru">
+                    </label>
+                    <label class="auth-label">Пароль
+                        <input type="password" id="login-password" name="password" required placeholder="••••••••">
+                    </label>
+                    <button type="submit" class="btn-auth-submit">Войти</button>
+                    <p class="auth-switch">Нет аккаунта? <button type="button" class="auth-link" id="link-to-register">Зарегистрироваться</button></p>
+                </form>
+
+                <form id="form-register" class="auth-form" autocomplete="on" hidden>
+                    <label class="auth-label">Электронная почта
+                        <input type="email" id="reg-email" name="email" required placeholder="you@mail.ru">
+                    </label>
+                    <label class="auth-label">Пароль
+                        <input type="password" id="reg-password" name="password" required placeholder="Не менее 6 символов" minlength="6">
+                    </label>
+                    <label class="auth-label">Повторите пароль
+                        <input type="password" id="reg-password2" name="password2" required placeholder="Ещё раз">
+                    </label>
+                    <label class="auth-label">Группа
+                        <select id="reg-group" name="group" required>
+                            <option value="" disabled selected>Выберите группу</option>
+                        </select>
+                    </label>
+                    <div class="auth-fio-row">
+                        <label class="auth-label">Фамилия
+                            <input type="text" id="reg-last-name" name="lastName" required placeholder="Студентов">
+                        </label>
+                        <label class="auth-label">Имя
+                            <input type="text" id="reg-first-name" name="firstName" required placeholder="Студент">
+                        </label>
+                        <label class="auth-label">Отчество
+                            <input type="text" id="reg-middle-name" name="middleName" placeholder="Студентович">
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-auth-submit">Создать аккаунт</button>
+                    <p class="auth-switch">Уже есть аккаунт? <button type="button" class="auth-link" id="link-to-login">Войти</button></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="event-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content event-modal-card">
+            <button type="button" class="close-modal" aria-label="Закрыть">&times;</button>
+
+            <div class="modal-gallery" id="modal-gallery">
+                <div class="modal-gallery-track" id="modal-gallery-track">
+                    <button type="button" id="prev-img" class="nav-btn" aria-label="Предыдущее фото">‹</button>
+                    <button type="button" id="next-img" class="nav-btn" aria-label="Следующее фото">›</button>
+                    <div class="images-wrapper" id="images-wrapper"></div>
+                </div>
+                <div class="modal-gallery-empty" id="modal-gallery-empty" hidden>
+                    <span class="modal-gallery-empty-icon" aria-hidden="true">🖼</span>
+                    <p>Организатор пока не добавил фотографии к этому мероприятию.</p>
+                </div>
             </div>
 
             <div class="modal-body">
                 <div class="modal-header-info">
                     <div id="modal-tags" class="activity-tags"></div>
-                    <h1 id="modal-title">Название мероприятия</h1>
+                    <h1 id="modal-title" class="modal-title">Название мероприятия</h1>
                     <div class="modal-meta">
-                        <span id="modal-organizer"></span> • <span id="modal-date"></span>
+                        <span id="modal-organizer"></span>
+                        <span class="modal-meta-dot" aria-hidden="true">·</span>
+                        <span id="modal-date"></span>
                     </div>
                 </div>
 
                 <div class="modal-grid">
                     <div class="modal-description">
-                        <h3>Об описании</h3>
-                        <p id="modal-desc-full">Полное описание мероприятия подтянется сюда...</p>
-                        
+                        <h3 class="modal-section-title">Описание</h3>
+                        <p id="modal-desc-full" class="modal-desc-text">Полное описание мероприятия подтянется сюда...</p>
+
                         <div class="reward-highlight">
-                            <span>Награда за участие:</span>
-                            <div class="activity-reward">
+                            <span class="reward-highlight-label">Награда за участие</span>
+                            <div class="activity-reward reward-highlight-value">
                                 <span id="modal-reward">0</span>
-                                <img src="icons/wishenka.svg" alt="cherry" style="width: 20px;">
+                                <img src="icons/wishenka.svg" alt="" width="20" height="20">
                             </div>
                         </div>
                     </div>
 
-                    <div class="modal-participants">
-                        <h3>Уже записались</h3>
-                        <div id="participants-list" class="participants-stack">
-                            </div>
-                        <div class="slots-info">Осталось мест: <strong id="modal-slots">12/20</strong></div>
-                    </div>
+                    <aside class="modal-participants" aria-labelledby="participants-heading">
+                        <div class="modal-participants-head">
+                            <h3 id="participants-heading" class="modal-section-title modal-section-title--compact">Уже записались</h3>
+                            <span class="participants-count-badge" id="modal-participants-count">0</span>
+                        </div>
+                        <div id="participants-list" class="participants-list"></div>
+                    </aside>
                 </div>
             </div>
 
-            <div class="modal-footer">
-                <button class="btn-register">Записаться на мероприятие</button>
+            <div class="modal-footer" id="modal-footer">
+                <p class="modal-register-hint" id="btn-register-hint">Войдите в аккаунт, чтобы записаться на мероприятие.</p>
+                <button type="button" class="btn-register" id="btn-event-register">Записаться на мероприятие</button>
             </div>
         </div>
     </div>

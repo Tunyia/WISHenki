@@ -14,6 +14,23 @@ class Student(Base):
     available_points: Mapped[int] = mapped_column(Integer, default=0)
 
     transactions = relationship("Transaction", back_populates="student")
+    user = relationship("User", back_populates="student", uselist=False)
+
+
+class User(Base):
+    """Учётная запись студента: почта + пароль, привязка к одной записи Student."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    student_id: Mapped[int] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"),
+        unique=True,
+    )
+
+    student = relationship("Student", back_populates="user")
 
 
 class Item(Base):
