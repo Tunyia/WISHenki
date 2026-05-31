@@ -21,6 +21,7 @@ from core.attendance import cherries_for_attendance, upsert_attendance
 from core.database import Base, SessionLocal, engine
 from core.migrate import ensure_schema_updates
 from core.points import sync_student_points
+from core.demo_activities import DEMO_TAG
 from core.security import hash_password
 from models.activity import Activity, ActivityAttendance, ActivityEnrollment
 from models.rating import Student, Transaction, User
@@ -436,6 +437,106 @@ def pick_activity(db: Session) -> Activity | None:
     return act
 
 
+def collect_known_tags(db: Session) -> list[str]:
+    tags: set[str] = {DEMO_TAG}
+    for act in db.query(Activity).all():
+        for cat in act.categories or []:
+            if cat:
+                tags.add(cat)
+    return sorted(tags, key=str.casefold)
+
+
+def pick_tags(db: Session) -> list[str]:
+    known = collect_known_tags(db)
+    print("\nДоступные теги (номера через запятую, обязательно хотя бы один):")
+    for i, tag in enumerate(known, start=1):
+        print(f"  {i} — {tag}")
+    raw = input("Выбор: ").strip()
+    if not raw:
+        return []
+    selected: list[str] = []
+    for part in raw.replace(";", ",").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if part.isdigit():
+            idx = int(part) - 1
+            if 0 <= idx < len(known):
+                tag = known[idx]
+                if tag not in selected:
+                    selected.append(tag)
+            else:
+                print(f"  Пропущен номер {part}")
+        elif part not in selected:
+            selected.append(part)
+    return selected
+
+
+def create_activity(db: Session) -> bool:
+    title = read_str("Название: ")
+    if not title:
+        return False
+    if db.query(Activity).filter(Activity.title == title).first():
+        print("Мероприятие с таким названием уже есть.")
+        return False
+    organizer = read_str("Организатор: ") or "—"
+    description = read_str("Описание: ") or ""
+    event_date = read_str("Дата (строка, напр. «25 Мая, 10:00»): ") or "—"
+    base_reward = read_int("Базовая награда (вишенки): ") or 0
+    categories = pick_tags(db)
+    if not categories:
+        print("Нужно выбрать хотя бы один тег.")
+        return False
+
+    act = Activity(
+        title=title,
+        organizer=organizer,
+        description=description,
+        categories=categories,
+        base_reward=max(0, base_reward),
+        event_date=event_date,
+        images=[],
+        is_completed=False,
+    )
+    db.add(act)
+    db.commit()
+    db.refresh(act)
+    print(f"Создано мероприятие #{act.id}: {act.title}")
+    print(f"  Теги: {', '.join(categories)}")
+    return True
+
+
+def delete_activity(db: Session, activity: Activity) -> bool:
+    enrollments = (
+        db.query(ActivityEnrollment)
+        .filter(ActivityEnrollment.activity_id == activity.id)
+        .count()
+    )
+    attendances = (
+        db.query(ActivityAttendance)
+        .filter(ActivityAttendance.activity_id == activity.id)
+        .count()
+    )
+    print(
+        f"Мероприятие #{activity.id}: {activity.title}\n"
+        f"  Записей: {enrollments}, посещений: {attendances}"
+    )
+    if not read_yes_no("Удалить мероприятие и все связанные записи?"):
+        print("Отменено.")
+        return False
+
+    db.query(ActivityEnrollment).filter(
+        ActivityEnrollment.activity_id == activity.id
+    ).delete()
+    db.query(ActivityAttendance).filter(
+        ActivityAttendance.activity_id == activity.id
+    ).delete()
+    db.delete(activity)
+    db.commit()
+    print("Мероприятие удалено.")
+    return True
+
+
 def menu_students(db: Session) -> None:
     offset = 0
     while True:
@@ -510,6 +611,8 @@ def menu_activities(db: Session) -> None:
         print("  6 — выписать студента (предстоящее)")
         print("  7 — отметить посещение + бонус (архив)")
         print("  8 — снять посещение (архив)")
+        print("  9 — добавить предстоящее мероприятие")
+        print(" 10 — удалить мероприятие")
         print("  0 — назад")
         choice = read_int("Выбор: ")
 
@@ -548,6 +651,14 @@ def menu_activities(db: Session) -> None:
             st = pick_student(db)
             if act and st:
                 remove_attendance(db, act, st)
+                pause()
+        elif choice == 9:
+            create_activity(db)
+            pause()
+        elif choice == 10:
+            act = pick_activity(db)
+            if act:
+                delete_activity(db, act)
                 pause()
         else:
             print("Неверный пункт.")

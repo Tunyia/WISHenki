@@ -541,6 +541,7 @@ function filterLeaderboardLocal(searchText, filterGroup, hasFilter) {
 function getTagClass(tagName) {
     const name = tagName.toLowerCase();
     if (name === 'прошедшие') return 'tag-past';
+    if (name === 'демо') return 'tag-demo';
     if (name.includes('it') || name.includes('программирование')) return 'tag-it';
     if (name.includes('наука') || name.includes('лекция')) return 'tag-science';
     if (name.includes('социальное') || name.includes('волонтер')) return 'tag-social';

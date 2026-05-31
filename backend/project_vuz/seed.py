@@ -8,8 +8,9 @@ from sqlalchemy.orm import Session
 
 from core.attendance import ensure_attendance
 from core.database import Base, SessionLocal, engine
+from core.demo_activities import DEMO_UPCOMING_ACTIVITIES
 from core.points import sync_all_students_points, sync_student_points
-from models.activity import Activity, ActivityAttendance, ActivityEnrollment
+from models.activity import Activity, ActivityAttendance
 from models.rating import Item, Student, Transaction, User
 
 
@@ -121,91 +122,7 @@ def seed(db: Session) -> None:
             ensure_student(db, row["fullName"], row["group"])
 
     if db.query(Activity).count() == 0:
-        past_templates = [
-            {
-                "title": "Лекция по GeoAI",
-                "organizer": "Деканат",
-                "description": "Обсуждаем современные тренды в геоаналитике, цифровые двойники городов и спутниковые снимки.",
-                "categories": ["Наука", "Геодезия"],
-                "base_reward": 15,
-                "event_date": "12 Сентября, 14:30",
-                "images": [],
-                "is_completed": True,
-            },
-            {
-                "title": "Лекция по Python",
-                "organizer": "Деканат",
-                "description": "Обсуждаем python!",
-                "categories": ["Наука", "IT"],
-                "base_reward": 15,
-                "event_date": "5 Сентября, 14:30",
-                "images": [],
-                "is_completed": True,
-            },
-            {
-                "title": "Хакатон «Code & Chill» (осень)",
-                "organizer": "IT-Клуб",
-                "description": "Прошедший хакатон: разработка решений для университета за 24 часа.",
-                "categories": ["IT", "Хакатон"],
-                "base_reward": 50,
-                "event_date": "1 Сентября, 10:00",
-                "images": ["kot.png", "kot2.png", "nekot.png"],
-                "is_completed": True,
-            },
-            {
-                "title": "Волонтёрство на Дне открытых дверей",
-                "organizer": "Университет",
-                "description": "Помощь абитуриентам и родителям навигации по кампусу.",
-                "categories": ["Социальное", "Волонтерство"],
-                "base_reward": 30,
-                "event_date": "25 Августа, 09:00",
-                "images": [],
-                "is_completed": True,
-            },
-            {
-                "title": "Фестиваль «ВИШенка»",
-                "organizer": "Студсовет",
-                "description": "Главное осеннее мероприятие института.",
-                "categories": ["Социальное", "ВУЗ"],
-                "base_reward": 999,
-                "event_date": "20 Августа, 18:00",
-                "images": [],
-                "is_completed": True,
-            },
-        ]
-        upcoming_templates = [
-            {
-                "title": "Хакатон «Code & Chill»",
-                "organizer": "IT-Клуб",
-                "description": "Разработка инновационных решений для университета за 24 часа. Приходи с командой или найди её на месте!",
-                "categories": ["Программирование", "Хакатон", "IT"],
-                "base_reward": 50,
-                "event_date": "15 Октября, 10:00",
-                "images": ["kot.png", "kot2.png", "nekot.png"],
-                "is_completed": False,
-            },
-            {
-                "title": "Волонтерство на Дне Открытых Дверей",
-                "organizer": "Университет",
-                "description": "Помощь в организации навигации для абитуриентов и их родителей.",
-                "categories": ["Социальное", "Волонтерство", "ВУЗ"],
-                "base_reward": 30,
-                "event_date": "20 Октября, 09:00",
-                "images": [],
-                "is_completed": False,
-            },
-            {
-                "title": "Лекция: карьера в IT",
-                "organizer": "Деканат",
-                "description": "Приглашённые спикеры из индустрии.",
-                "categories": ["IT", "Наука"],
-                "base_reward": 20,
-                "event_date": "22 Октября, 16:00",
-                "images": [],
-                "is_completed": False,
-            },
-        ]
-        for tpl in past_templates + upcoming_templates:
+        for tpl in DEMO_UPCOMING_ACTIVITIES:
             db.add(Activity(**tpl))
         db.commit()
 
@@ -215,7 +132,7 @@ def seed(db: Session) -> None:
     festival = next((a for a in past_acts if "Фестиваль" in a.title), None)
     regular_past = [a for a in past_acts if a is not festival]
 
-    if db.query(ActivityAttendance).count() == 0:
+    if db.query(ActivityAttendance).count() == 0 and regular_past:
         for row in mock_leaderboard_data:
             st = (
                 db.query(Student)
@@ -232,18 +149,6 @@ def seed(db: Session) -> None:
             grant_cherries_via_events(db, st, target, regular_past)
         db.commit()
         sync_all_students_points(db)
-
-    if db.query(ActivityEnrollment).count() == 0:
-        upcoming = (
-            db.query(Activity)
-            .filter(Activity.is_completed.is_(False))
-            .order_by(Activity.id.asc())
-            .first()
-        )
-        if upcoming is not None:
-            for st in db.query(Student).order_by(Student.id.asc()).limit(6).all():
-                db.add(ActivityEnrollment(activity_id=upcoming.id, student_id=st.id))
-            db.commit()
 
 
 def main() -> None:
