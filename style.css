@@ -1198,10 +1198,363 @@ body {
 .activity-card:nth-child(10) { animation-delay: 1s; }
 
 @media (max-width: 640px) {
-    .profile-card { flex-direction: column; align-items: flex-start; }
-    .activities-control-panel { flex-direction: column; align-items: stretch; }
-    .leaderboard-header { flex-direction: column; align-items: stretch; }
-    .auth-fio-row { grid-template-columns: 1fr; }
-    .modal-gallery-track { height: 220px; }
-    .modal-body { padding: 20px 18px 22px; }
+    html {
+        overflow-x: hidden;
+    }
+
+    body {
+        padding: max(12px, env(safe-area-inset-top)) 10px max(24px, env(safe-area-inset-bottom));
+        overflow-x: hidden;
+    }
+
+    .container {
+        min-width: 0;
+    }
+
+    /* --- Профиль --- */
+    .profile-card {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .profile-guest {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .profile-left {
+        gap: 14px;
+    }
+
+    .profile-right,
+    .profile-guest-actions {
+        width: 100%;
+    }
+
+    .profile-guest-message {
+        font-size: 16px;
+        max-width: none;
+    }
+
+    .avatar-placeholder {
+        width: 72px;
+        height: 72px;
+    }
+
+    .avatar-guest-icon {
+        font-size: 28px;
+    }
+
+    .user-info h1 {
+        font-size: 20px;
+    }
+
+    .user-meta {
+        font-size: 15px;
+    }
+
+    .balance-container {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .balance-badge {
+        font-size: 24px;
+    }
+
+    .balance-text {
+        font-size: 16px;
+    }
+
+    .btn-auth-open {
+        width: 100%;
+        min-height: 44px;
+        padding: 12px 20px;
+    }
+
+    .btn-logout {
+        min-height: 44px;
+        padding: 8px 0;
+    }
+
+    /* --- Рейтинг --- */
+    .leaderboard-section {
+        padding: 14px 12px;
+        margin-bottom: 16px;
+    }
+
+    .leaderboard-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .leaderboard-header h2 {
+        font-size: 18px;
+    }
+
+    .leaderboard-controls {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+    }
+
+    .leaderboard-controls input,
+    .leaderboard-controls select,
+    #group-filter {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -4px;
+        padding: 0 4px;
+    }
+
+    .leaderboard-table {
+        table-layout: auto;
+        min-width: 0;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+
+    /* На узком экране скрываем колонку «Группа» */
+    .leaderboard-table th:nth-child(3),
+    .leaderboard-table td:nth-child(3) {
+        display: none;
+    }
+
+    .leaderboard-table th:nth-child(1) { width: 44px; }
+    .leaderboard-table th:nth-child(2) { width: auto; }
+    .leaderboard-table th:nth-child(4) { width: 72px; }
+
+    .leaderboard-table .student-cell {
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    .leaderboard-table .student-cell .student-avatar-mini {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
+
+    .leaderboard-table .student-cell {
+        font-size: 13px;
+        line-height: 1.35;
+        word-break: break-word;
+    }
+
+    .btn-toggle-leaderboard {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .leaderboard-toggle-hint {
+        text-align: center;
+        font-size: 12px;
+    }
+
+    /* --- Мероприятия --- */
+    .activities-section {
+        margin-bottom: 28px;
+    }
+
+    .activities-control-panel {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 14px 12px;
+        margin-bottom: 16px;
+        gap: 14px;
+    }
+
+    .panel-info h2 {
+        font-size: 18px;
+    }
+
+    .panel-filters {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    #activity-search,
+    #tag-filter,
+    #past-activity-search,
+    #past-tag-filter {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .activities-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .activity-card {
+        padding: 16px;
+    }
+
+    .activity-title {
+        font-size: 1.1rem;
+    }
+
+    .btn-toggle-past-events {
+        padding: 14px 16px;
+        font-size: 16px;
+        min-height: 44px;
+    }
+
+    .activity-footer {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .activity-date {
+        font-size: 0.8rem;
+    }
+
+    /* --- Модалка мероприятия --- */
+    .modal-overlay {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .modal-content.event-modal-card {
+        max-width: 100%;
+        width: 100%;
+        max-height: 100vh;
+        max-height: 100dvh;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .modal-content.auth-modal-content {
+        max-width: 100%;
+        width: 100%;
+        max-height: 100vh;
+        max-height: 100dvh;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .modal-gallery-track {
+        height: 200px;
+    }
+
+    .modal-body {
+        padding: 16px 14px 18px;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+    }
+
+    .modal-footer {
+        padding: 14px 14px 18px;
+        padding-bottom: max(18px, env(safe-area-inset-bottom));
+    }
+
+    .modal-description,
+    .modal-participants {
+        padding: 14px 12px;
+    }
+
+    .close-modal,
+    .close-auth-modal {
+        width: 44px;
+        height: 44px;
+        top: 10px;
+        right: 10px;
+    }
+
+    .btn-register {
+        min-height: 48px;
+    }
+
+    /* Таблица посетителей — скрываем # и группу */
+    .participants-modal-table .pm-th-rank,
+    .participants-modal-table .pm-td-rank,
+    .participants-modal-table .pm-th-group,
+    .participants-modal-table .pm-td-group {
+        display: none;
+    }
+
+    .participants-modal-table th,
+    .participants-modal-table td {
+        padding: 8px 6px;
+        font-size: 13px;
+    }
+
+    .participants-modal-table .pm-col-rank,
+    .participants-modal-table .pm-col-group {
+        width: 0;
+    }
+
+    /* --- Авторизация --- */
+    .auth-modal-body {
+        padding: 24px 16px 20px;
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+
+    .auth-fio-row {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-modal-title {
+        font-size: 20px;
+    }
+
+    .btn-auth-submit {
+        min-height: 48px;
+    }
+}
+
+/* Тач-устройства: убираем hover-эффекты, увеличиваем зоны нажатия */
+@media (hover: none) and (pointer: coarse) {
+    .profile-card:hover,
+    .activity-card:hover,
+    .btn-toggle-past-events:hover,
+    .btn-toggle-leaderboard:hover,
+    .btn-auth-open:hover,
+    .btn-auth-submit:hover,
+    .btn-register:hover:not(:disabled) {
+        transform: none;
+    }
+
+    .activity-card:hover {
+        box-shadow: var(--shadow-md), var(--shadow-sm);
+        border-color: var(--border-color);
+    }
+
+    .leaderboard-table tbody tr:hover {
+        background-color: transparent;
+    }
+
+    .leaderboard-table tbody tr:not(.current-user-row):hover {
+        background-color: transparent;
+    }
+
+    .leaderboard-table tr.current-user-row:hover {
+        background-color: #fff1f2 !important;
+    }
+
+    .participants-modal-table tbody tr:hover {
+        background-color: transparent;
+    }
+
+    .participants-modal-table tbody tr.pm-row-me:hover {
+        background-color: #fff1f2 !important;
+    }
 }
