@@ -39,6 +39,7 @@ docker compose exec api python seed.py --wait 60
 | `seed.py` | Демо-данные: студенты, мероприятия, посещения, вишенки |
 | `list_users.py` | Список зарегистрированных аккаунтов (email + студент, **без паролей**) |
 | `import_excel.py` | Импорт студентов и бонусных вишенок из Excel (лист 2-го семестра) |
+| `admin_menu.py` | Интерактивное CRUD-меню администратора в консоли |
 
 Подробные команды — в [DOCKER.md](DOCKER.md) и [DEPLOY.md](DEPLOY.md).
 

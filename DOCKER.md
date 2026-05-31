@@ -116,6 +116,22 @@ docker compose exec api python import_excel.py --force
 `--force` очищает students, activities, users и заливает данные из таблицы.  
 981 уникальный студент (31 дубль строки в Excel пропускается), 34 мероприятия, бонусы = сумма категорий.
 
+## Меню администратора (`admin_menu.py`)
+
+Интерактивное консольное меню: студенты, аккаунты, запись на мероприятия, посещения, удаление.
+
+```powershell
+docker compose exec -it api python admin_menu.py
+```
+
+На VPS:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env exec -it api python admin_menu.py
+```
+
+Флаг **`-it`** обязателен — без него меню не интерактивное.
+
 ## Полезные команды
 
 | Команда | Значение |
@@ -124,6 +140,7 @@ docker compose exec api python import_excel.py --force
 | `docker compose logs api` | Логи бэкенда |
 | `docker compose restart api` | Перезапуск API |
 | `docker compose exec api python list_users.py` | Список аккаунтов |
+| `docker compose exec -it api python admin_menu.py` | Меню администратора |
 | `docker compose exec api python import_excel.py --force` | Импорт из Excel (2-й семестр) |
 | `docker compose exec api python seed.py --force --wait 60` | Полный пересид демо-данных |
 | `docker compose down -v` | Остановить и **удалить volume БД** (полный сброс данных) |
@@ -151,4 +168,4 @@ python -m http.server 5500 --bind 127.0.0.1
 - `docker/Dockerfile.web` + `docker/nginx.conf` — образ фронта с прокси
 - `backend/project_vuz/seed.py` — демо-данные
 - `backend/project_vuz/list_users.py` — список аккаунтов
-- `backend/project_vuz/import_excel.py` — импорт из Excel
+- `backend/project_vuz/admin_menu.py` — меню администратора

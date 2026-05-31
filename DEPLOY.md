@@ -159,6 +159,9 @@ docker compose -f docker-compose.prod.yml --env-file .env exec api python list_u
 docker compose -f docker-compose.prod.yml --env-file .env exec api python import_excel.py --dry-run
 docker compose -f docker-compose.prod.yml --env-file .env exec api python import_excel.py --force
 
+# Меню администратора (интерактивно, флаг -it)
+docker compose -f docker-compose.prod.yml --env-file .env exec -it api python admin_menu.py
+
 # Полный сброс демо-данных (ОСТОРОЖНО — удалит все данные!)
 docker compose -f docker-compose.prod.yml exec api python seed.py --force --wait 60
 ```
