@@ -170,15 +170,9 @@
                 </form>
 
                 <form id="form-register" class="auth-form" autocomplete="on" hidden>
-                    <label class="auth-label">Электронная почта
-                        <input type="email" id="reg-email" name="email" required placeholder="you@mail.ru">
-                    </label>
-                    <label class="auth-label">Пароль
-                        <input type="password" id="reg-password" name="password" required placeholder="Не менее 6 символов" minlength="6">
-                    </label>
-                    <label class="auth-label">Повторите пароль
-                        <input type="password" id="reg-password2" name="password2" required placeholder="Ещё раз">
-                    </label>
+                    <p class="auth-register-note">
+                        Регистрация привязывает аккаунт к вашей записи в рейтинге. Укажите ФИО и группу как в списке студентов.
+                    </p>
                     <label class="auth-label">Группа
                         <select id="reg-group" name="group" required>
                             <option value="" disabled selected>Выберите группу</option>
@@ -195,6 +189,16 @@
                             <input type="text" id="reg-middle-name" name="middleName" placeholder="Студентович">
                         </label>
                     </div>
+                    <div id="reg-student-hint" class="auth-student-hint" role="status" hidden></div>
+                    <label class="auth-label">Электронная почта
+                        <input type="email" id="reg-email" name="email" required placeholder="you@mail.ru">
+                    </label>
+                    <label class="auth-label">Пароль
+                        <input type="password" id="reg-password" name="password" required placeholder="Не менее 6 символов" minlength="6">
+                    </label>
+                    <label class="auth-label">Повторите пароль
+                        <input type="password" id="reg-password2" name="password2" required placeholder="Ещё раз">
+                    </label>
                     <button type="submit" class="btn-auth-submit">Создать аккаунт</button>
                     <p class="auth-switch">Уже есть аккаунт? <button type="button" class="auth-link" id="link-to-login">Войти</button></p>
                 </form>

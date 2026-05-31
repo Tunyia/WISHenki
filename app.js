@@ -101,12 +101,94 @@ function setAuthError(message) {
     el.textContent = message;
 }
 
+function setRegStudentHint(message, kind) {
+    const el = document.getElementById('reg-student-hint');
+    if (!el) return;
+    el.classList.remove('is-success', 'is-warning', 'is-error');
+    if (!message) {
+        el.hidden = true;
+        el.textContent = '';
+        return;
+    }
+    el.hidden = false;
+    el.textContent = message;
+    if (kind) el.classList.add(kind);
+}
+
+function clearRegStudentHint() {
+    setRegStudentHint('');
+}
+
+let regStudentCheckTimer = null;
+let regStudentClaimOk = false;
+
+function getRegIdentityPayload() {
+    const study_group = document.getElementById('reg-group')?.value || '';
+    const last_name = (document.getElementById('reg-last-name')?.value || '').trim();
+    const first_name = (document.getElementById('reg-first-name')?.value || '').trim();
+    const middle_name = (document.getElementById('reg-middle-name')?.value || '').trim();
+    return { study_group, last_name, first_name, middle_name };
+}
+
+function applyRegStudentCheckResult(result) {
+    if (!result.found) {
+        regStudentClaimOk = false;
+        setRegStudentHint(result.message, 'is-error');
+        return false;
+    }
+    if (result.already_registered) {
+        regStudentClaimOk = false;
+        setRegStudentHint(result.message, 'is-warning');
+        return false;
+    }
+    regStudentClaimOk = true;
+    setRegStudentHint(result.message, 'is-success');
+    return true;
+}
+
+async function verifyRegStudentClaimImmediate() {
+    const { study_group, last_name, first_name, middle_name } = getRegIdentityPayload();
+    if (!study_group || !last_name || !first_name) {
+        return { ok: false, message: 'Заполните группу, фамилию и имя.' };
+    }
+    const body = { study_group, last_name, first_name };
+    if (middle_name) body.middle_name = middle_name;
+    const result = await apiFetch('/api/auth/check-student', {
+        method: 'POST',
+        body,
+    });
+    const ok = applyRegStudentCheckResult(result);
+    return { ok, message: result.message };
+}
+
+async function checkRegStudentClaim() {
+    clearTimeout(regStudentCheckTimer);
+    regStudentClaimOk = false;
+
+    const { study_group, last_name, first_name } = getRegIdentityPayload();
+    if (!study_group || !last_name || !first_name) {
+        clearRegStudentHint();
+        return;
+    }
+
+    regStudentCheckTimer = setTimeout(async () => {
+        try {
+            await verifyRegStudentClaimImmediate();
+        } catch (e) {
+            console.warn('Проверка студента не удалась.', e);
+            clearRegStudentHint();
+        }
+    }, 400);
+}
+
 function showAuthView(mode) {
     const loginForm = document.getElementById('form-login');
     const regForm = document.getElementById('form-register');
     const title = document.getElementById('auth-modal-title');
     if (!loginForm || !regForm || !title) return;
     setAuthError('');
+    clearRegStudentHint();
+    regStudentClaimOk = false;
     if (mode === 'register') {
         loginForm.hidden = true;
         regForm.hidden = false;
@@ -285,6 +367,7 @@ function studentsToLeaderboard(students) {
             fullName: s.full_name,
             group: s.study_group,
             cherries: s.available_points,
+            hasAccount: Boolean(s.has_account),
         }))
         .sort((a, b) => b.cherries - a.cherries || a.id - b.id);
 }
@@ -386,15 +469,19 @@ function renderLeaderboard(data) {
         const tr = document.createElement('tr');
         tr.className = rowClass; // Применяем класс к строке
 
+        const avatarClass = student.hasAccount
+            ? 'student-avatar-mini student-avatar-mini--registered'
+            : 'student-avatar-mini';
+
         tr.innerHTML = `
             <td class="${rankClass}">#${index + 1}</td>
             <td>
                 <div class="student-cell">
-                    <div class="student-avatar-mini">${student.fullName.charAt(0)}</div>
-                    ${student.fullName}
+                    <div class="${avatarClass}">${student.fullName.charAt(0)}</div>
+                    ${escapeHtml(student.fullName)}
                 </div>
             </td>
-            <td>${student.group}</td>
+            <td>${escapeHtml(student.group)}</td>
             
             <td style="font-weight: 600; color: var(--cherry-red);">
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -911,6 +998,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('link-to-register')?.addEventListener('click', () => showAuthView('register'));
     document.getElementById('link-to-login')?.addEventListener('click', () => showAuthView('login'));
 
+    ['reg-group', 'reg-last-name', 'reg-first-name', 'reg-middle-name'].forEach((id) => {
+        document.getElementById(id)?.addEventListener('input', checkRegStudentClaim);
+        document.getElementById(id)?.addEventListener('change', checkRegStudentClaim);
+    });
+
     document.getElementById('form-login')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = (document.getElementById('login-email').value || '').trim().toLowerCase();
@@ -951,10 +1043,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = (document.getElementById('reg-email').value || '').trim().toLowerCase();
         const password = document.getElementById('reg-password').value || '';
         const password2 = document.getElementById('reg-password2').value || '';
-        const study_group = document.getElementById('reg-group').value;
-        const last_name = (document.getElementById('reg-last-name').value || '').trim();
-        const first_name = (document.getElementById('reg-first-name').value || '').trim();
-        const middle_name = (document.getElementById('reg-middle-name').value || '').trim();
+        const { study_group, last_name, first_name, middle_name } = getRegIdentityPayload();
 
         if (!email || !password || !study_group || !last_name || !first_name) {
             setAuthError('Заполните обязательные поля.');
@@ -965,6 +1054,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         try {
+            const verify = await verifyRegStudentClaimImmediate();
+            if (!verify.ok) {
+                setAuthError(verify.message);
+                return;
+            }
             const body = {
                 email,
                 password,

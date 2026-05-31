@@ -10,6 +10,21 @@ class RegisterRequest(BaseModel):
     middle_name: str | None = Field(default=None, max_length=100)
 
 
+class CheckStudentRequest(BaseModel):
+    study_group: str = Field(min_length=1, max_length=32)
+    last_name: str = Field(min_length=1, max_length=100)
+    first_name: str = Field(min_length=1, max_length=100)
+    middle_name: str | None = Field(default=None, max_length=100)
+
+
+class CheckStudentResponse(BaseModel):
+    found: bool
+    already_registered: bool = False
+    full_name: str | None = None
+    study_group: str | None = None
+    message: str
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=128)

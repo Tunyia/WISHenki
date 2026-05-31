@@ -14,6 +14,7 @@ class StudentResponse(StudentBase):
     id: int
     total_points: int
     available_points: int
+    has_account: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

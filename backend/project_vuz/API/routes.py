@@ -9,8 +9,9 @@ from API.deps import get_current_student
 from core.attendance import cherries_for_attendance
 from core.database import get_db
 from core.points import sync_student_points
+from core.student_claim import student_has_account
 from models.activity import Activity, ActivityAttendance, ActivityEnrollment
-from models.rating import Item, Student, Transaction
+from models.rating import Item, Student, Transaction, User
 from Shemas.activity import (
     ActivityCreate,
     ActivityAttendeeResponse,
@@ -29,11 +30,45 @@ from Shemas.rating import (
 router = APIRouter()
 
 
+def _registered_student_ids(db: Session, student_ids: list[int]) -> set[int]:
+    if not student_ids:
+        return set()
+    rows = (
+        db.query(User.student_id)
+        .filter(User.student_id.in_(student_ids))
+        .all()
+    )
+    return {row[0] for row in rows}
+
+
 def _student_response(db: Session, student: Student) -> StudentResponse:
     sync_student_points(db, student)
     db.commit()
     db.refresh(student)
-    return student
+    has_account = student_has_account(db, student)
+    return StudentResponse(
+        id=student.id,
+        full_name=student.full_name,
+        study_group=student.study_group,
+        total_points=student.total_points,
+        available_points=student.available_points,
+        has_account=has_account,
+    )
+
+
+def _students_to_responses(db: Session, students: list[Student]) -> list[StudentResponse]:
+    registered = _registered_student_ids(db, [st.id for st in students])
+    return [
+        StudentResponse(
+            id=st.id,
+            full_name=st.full_name,
+            study_group=st.study_group,
+            total_points=st.total_points,
+            available_points=st.available_points,
+            has_account=st.id in registered,
+        )
+        for st in students
+    ]
 
 
 @router.get("/students", response_model=list[StudentResponse])
@@ -63,7 +98,7 @@ def list_students(
     db.commit()
     for st in students:
         db.refresh(st)
-    return students
+    return _students_to_responses(db, students)
 
 
 @router.get("/students/groups", response_model=list[str])
@@ -93,7 +128,14 @@ def create_student(
     db.add(student)
     db.commit()
     db.refresh(student)
-    return student
+    return StudentResponse(
+        id=student.id,
+        full_name=student.full_name,
+        study_group=student.study_group,
+        total_points=student.total_points,
+        available_points=student.available_points,
+        has_account=False,
+    )
 
 
 @router.get("/students/{student_id}", response_model=StudentResponse)

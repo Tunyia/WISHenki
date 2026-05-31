@@ -8,17 +8,18 @@ from API.deps import get_current_student
 from core.database import get_db
 from core.points import sync_student_points
 from core.security import create_access_token, hash_password, verify_password
+from core.student_claim import find_student_for_claim, student_has_account
 from models.rating import Student, User
-from Shemas.auth import AuthTokenResponse, CurrentUserResponse, LoginRequest, RegisterRequest
+from Shemas.auth import (
+    AuthTokenResponse,
+    CheckStudentRequest,
+    CheckStudentResponse,
+    CurrentUserResponse,
+    LoginRequest,
+    RegisterRequest,
+)
 
 router = APIRouter()
-
-
-def _build_full_name(last_name: str, first_name: str, middle_name: str | None) -> str:
-    parts = [last_name.strip(), first_name.strip()]
-    if middle_name and middle_name.strip():
-        parts.append(middle_name.strip())
-    return " ".join(parts)
 
 
 def _token_response(db: Session, student: Student, user: User) -> AuthTokenResponse:
@@ -37,34 +38,77 @@ def _token_response(db: Session, student: Student, user: User) -> AuthTokenRespo
     )
 
 
+def _resolve_claimable_student(
+    db: Session,
+    *,
+    last_name: str,
+    first_name: str,
+    middle_name: str | None,
+    study_group: str,
+) -> Student:
+    student, error = find_student_for_claim(
+        db,
+        last_name=last_name,
+        first_name=first_name,
+        middle_name=middle_name,
+        study_group=study_group,
+    )
+    if student is None:
+        raise HTTPException(status_code=404, detail=error or "Студент не найден")
+
+    if student_has_account(db, student):
+        raise HTTPException(
+            status_code=409,
+            detail="Аккаунт для этого студента уже создан. Войдите в систему.",
+        )
+    return student
+
+
+@router.post("/check-student", response_model=CheckStudentResponse)
+def check_student(
+    payload: CheckStudentRequest,
+    db: Annotated[Session, Depends(get_db)],
+):
+    student, error = find_student_for_claim(
+        db,
+        last_name=payload.last_name,
+        first_name=payload.first_name,
+        middle_name=payload.middle_name,
+        study_group=payload.study_group,
+    )
+    if student is None:
+        return CheckStudentResponse(found=False, message=error or "Студент не найден")
+
+    if student_has_account(db, student):
+        return CheckStudentResponse(
+            found=True,
+            already_registered=True,
+            full_name=student.full_name,
+            study_group=student.study_group,
+            message="Аккаунт уже создан. Войдите в систему.",
+        )
+
+    return CheckStudentResponse(
+        found=True,
+        full_name=student.full_name,
+        study_group=student.study_group,
+        message=f"Найден в рейтинге: {student.full_name}, группа {student.study_group}",
+    )
+
+
 @router.post("/register", response_model=AuthTokenResponse, status_code=201)
 def register(
     payload: RegisterRequest,
     db: Annotated[Session, Depends(get_db)],
 ):
     email = payload.email.strip().lower()
-    group_exists = (
-        db.query(Student.id)
-        .filter(Student.study_group == payload.study_group)
-        .limit(1)
-        .first()
-    )
-    if group_exists is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Указана недопустимая группа",
-        )
-
-    full_name = _build_full_name(payload.last_name, payload.first_name, payload.middle_name)
-
-    student = Student(
-        full_name=full_name,
+    student = _resolve_claimable_student(
+        db,
+        last_name=payload.last_name,
+        first_name=payload.first_name,
+        middle_name=payload.middle_name,
         study_group=payload.study_group,
-        total_points=0,
-        available_points=0,
     )
-    db.add(student)
-    db.flush()
 
     user = User(
         email=email,
