@@ -1,4 +1,12 @@
 /* --- 1. ПЕРЕМЕННЫЕ И ОСНОВА --- */
+@font-face {
+    font-family: 'SF Pro Display';
+    font-style: normal;
+    font-weight: 800;
+    src: url('https://fonts.cdnfonts.com/s/59278/SFPRODISPLAYBOLD.woff') format('woff');
+    font-display: swap;
+}
+
 :root {
     --bg-color: #ebf1f5;
     --card-bg: #ffffff;
@@ -1213,11 +1221,42 @@ body {
     margin-bottom: 22px;
 }
 
-.merch-header h2 {
-    margin: 0 0 6px 0;
-    font-size: 22px;
-    font-weight: 700;
+.merch-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.merch-title {
+    margin: 0;
+    font-family: 'SF Pro Display', 'Inter', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
     color: #014590;
+}
+
+.btn-merch-cart {
+    flex-shrink: 0;
+    padding: 10px 22px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: #014590;
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+    box-shadow: 0 2px 8px rgba(1, 69, 144, 0.25);
+}
+
+.btn-merch-cart:hover {
+    background: #013a78;
+    transform: translateY(-1px);
 }
 
 .merch-grid {
@@ -1359,12 +1398,46 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
     padding: 10px 12px;
     background: #f8fafc;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     font-size: 14px;
+}
+
+.merch-cart-item-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.merch-cart-item-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.merch-cart-item-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color var(--transition), background var(--transition);
+}
+
+.merch-cart-item-remove:hover {
+    color: #dc2626;
+    background: #fee2e2;
 }
 
 .merch-cart-item-name {
@@ -1807,6 +1880,19 @@ body {
 
     .merch-section {
         padding: 16px 12px 20px;
+    }
+
+    .merch-title {
+        font-size: 26px;
+    }
+
+    .btn-merch-cart {
+        padding: 9px 16px;
+        font-size: 14px;
+    }
+
+    .merch-header-row {
+        align-items: flex-start;
     }
 
     .merch-grid {

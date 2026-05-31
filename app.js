@@ -1018,6 +1018,22 @@ function addToMerchCart(productId) {
     openMerchCartModal();
 }
 
+function removeFromMerchCart(productId) {
+    merchCart.delete(productId);
+}
+
+function bindMerchCartItemActions() {
+    const listEl = document.getElementById('merch-cart-items');
+    if (!listEl) return;
+    listEl.querySelectorAll('.merch-cart-item-remove').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeFromMerchCart(btn.getAttribute('data-product-id'));
+            renderMerchCartModal();
+        });
+    });
+}
+
 function renderMerchCatalog(products) {
     merchProductsData = Array.isArray(products) ? products : [];
     const grid = document.getElementById('merch-grid');
@@ -1071,18 +1087,22 @@ function renderMerchCartModal() {
     if (merchCart.size === 0) {
         listEl.innerHTML = '<p class="merch-cart-empty">Корзина пуста. Нажмите «Заказать!» у товара.</p>';
     } else {
-        listEl.innerHTML = [...merchCart.values()]
+        listEl.innerHTML = [...merchCart.entries()]
             .map(
-                ({ product, quantity }) => `
+                ([productId, { product, quantity }]) => `
             <div class="merch-cart-item">
-                <div>
+                <div class="merch-cart-item-main">
                     <div class="merch-cart-item-name">${escapeHtml(product.name)}</div>
                     <div class="merch-cart-item-meta">${quantity} × ${product.price}</div>
                 </div>
-                <div class="merch-cart-item-price">${formatCherriesHtml(product.price * quantity)}</div>
+                <div class="merch-cart-item-actions">
+                    <div class="merch-cart-item-price">${formatCherriesHtml(product.price * quantity)}</div>
+                    <button type="button" class="merch-cart-item-remove" data-product-id="${escapeHtml(productId)}" aria-label="Убрать из корзины">&times;</button>
+                </div>
             </div>`
             )
             .join('');
+        bindMerchCartItemActions();
     }
 
     balanceEl.innerHTML = formatCherriesHtml(balance);
@@ -1389,6 +1409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('close-merch-cart')?.addEventListener('click', closeMerchCartModal);
+    document.getElementById('btn-open-merch-cart')?.addEventListener('click', openMerchCartModal);
     document.getElementById('merch-cart-modal')?.addEventListener('click', (e) => {
         if (e.target.id === 'merch-cart-modal') closeMerchCartModal();
     });
