@@ -662,7 +662,7 @@ function renderPastActivities(activities) {
     grid.innerHTML = '';
     activities.forEach((activity) => {
         const card = document.createElement('div');
-        card.className = 'activity-card activity-card--past';
+        card.className = 'activity-card';
         const tagsHtml = (activity.categories || [])
             .map((tag) => `<span class="activity-tag ${getTagClass(tag)}">${tag}</span>`)
             .join('');
