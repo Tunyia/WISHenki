@@ -813,7 +813,7 @@ async function openEventModal(activityId, kind) {
         if (modalActivityKind === 'past') {
             rewardNote.hidden = false;
             rewardNote.textContent =
-                'Индивидуальные бонусные вишенки — в таблице посетителей справа.';
+                'Индивидуальные бонусные вишенки — в таблице посетителей ниже.';
         } else {
             rewardNote.hidden = true;
             rewardNote.textContent = '';

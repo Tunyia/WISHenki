@@ -726,7 +726,7 @@ body {
 }
 
 .modal-content.event-modal-card {
-    max-width: 720px;
+    max-width: 860px;
     border-radius: 20px;
     overflow: hidden;
     border: none;
@@ -802,23 +802,20 @@ body {
 
 .modal-gallery-empty {
     padding: 36px 24px;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     color: #94a3b8;
     font-size: 14px;
     line-height: 1.5;
-    max-width: 320px;
+    max-width: 420px;
     margin: 0 auto;
 }
 
 .modal-gallery-empty[hidden] {
     display: none !important;
-}
-
-.modal-gallery-empty-icon {
-    display: block;
-    font-size: 2rem;
-    margin-bottom: 10px;
-    opacity: 0.85;
 }
 
 .modal-gallery-empty p {
@@ -926,10 +923,9 @@ body {
 }
 
 .modal-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.05fr;
+    display: flex;
+    flex-direction: column;
     gap: 20px;
-    align-items: start;
 }
 
 .modal-description {
@@ -954,11 +950,10 @@ body {
 }
 
 .reward-highlight-note {
-    flex: 1 1 100%;
-    margin: 0;
+    margin: 10px 0 0 0;
     font-size: 12px;
     color: #9f1239;
-    line-height: 1.4;
+    line-height: 1.45;
 }
 
 .reward-highlight-label {
@@ -977,9 +972,8 @@ body {
     background: #fff;
     border: 3px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 14px 12px 12px;
+    padding: 18px 16px 14px;
     box-shadow: var(--shadow-md), var(--shadow-sm);
-    min-height: 120px;
 }
 
 .modal-participants-head {
@@ -1022,7 +1016,7 @@ body {
 .participants-modal-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;
+    table-layout: auto;
     text-align: left;
     font-size: 14px;
 }
@@ -1120,7 +1114,7 @@ body {
 .pm-student-cell {
     font-weight: 500;
     min-width: 0;
-    overflow: hidden;
+    align-items: flex-start;
 }
 
 .pm-student-cell .student-avatar-mini {
@@ -1130,9 +1124,9 @@ body {
 .pm-student-name {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.35;
 }
 
 .pm-you-badge {
@@ -1208,7 +1202,6 @@ body {
     .activities-control-panel { flex-direction: column; align-items: stretch; }
     .leaderboard-header { flex-direction: column; align-items: stretch; }
     .auth-fio-row { grid-template-columns: 1fr; }
-    .modal-grid { grid-template-columns: 1fr; }
     .modal-gallery-track { height: 220px; }
     .modal-body { padding: 20px 18px 22px; }
 }
