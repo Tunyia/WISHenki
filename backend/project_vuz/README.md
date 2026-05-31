@@ -19,7 +19,7 @@ docker compose up --build
 
 Демо-данные: `docker compose exec api python seed.py`
 
-Подробнее: [DOCKER.md](../../DOCKER.md) в корне репозитория.
+Подробнее: [DOCKER.md](../../DOCKER.md) в корне репозитория. Обзор всей документации: [README.md](../../README.md).
 
 ---
 
@@ -73,6 +73,26 @@ python -m venv .venv
 ```powershell
 .\.venv\Scripts\python seed.py --force --wait 60
 ```
+
+## Просмотр аккаунтов (`list_users.py`)
+
+На сайте нет списка пользователей. Скрипт выводит email, ФИО, группу и вишенки (**пароли не показываются**).
+
+Через Docker (из корня репозитория):
+
+```powershell
+docker compose exec api python list_users.py
+docker compose exec api python list_users.py --all-students
+```
+
+Локально через venv (из `backend/project_vuz`, при работающей БД):
+
+```powershell
+.\.venv\Scripts\python list_users.py
+.\.venv\Scripts\python list_users.py --all-students
+```
+
+`seed.py` создаёт студентов рейтинга **без** логинов — в `list_users.py` только зарегистрировавшиеся на сайте.
 
 ## Как “очистить БД и заполнить заново” (полный сброс через Docker volume)
 Проще всего удалить Docker volume с данными Postgres (это полностью сбросит БД):

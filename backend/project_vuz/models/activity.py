@@ -55,7 +55,11 @@ class ActivityEnrollment(Base):
 
 
 class ActivityAttendance(Base):
-    """Факт посещения прошедшего мероприятия — даёт base_reward вишенок."""
+    """Факт посещения прошедшего мероприятия.
+
+    Начисление: Activity.base_reward (фиксированная база) + bonus_points (индивидуально).
+    При импорте из Excel: base_reward мероприятия = 0, bonus_points = сумма по категориям.
+    """
 
     __tablename__ = "activity_attendances"
     __table_args__ = (
@@ -75,4 +79,5 @@ class ActivityAttendance(Base):
         ForeignKey("students.id", ondelete="CASCADE"),
         index=True,
     )
+    bonus_points: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 

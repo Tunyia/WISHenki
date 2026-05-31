@@ -18,3 +18,14 @@ def ensure_schema_updates() -> None:
                     "ADD COLUMN is_completed BOOLEAN NOT NULL DEFAULT FALSE"
                 )
             )
+
+    if insp.has_table("activity_attendances") and "bonus_points" not in {
+        c["name"] for c in insp.get_columns("activity_attendances")
+    }:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "ALTER TABLE activity_attendances "
+                    "ADD COLUMN bonus_points INTEGER NOT NULL DEFAULT 0"
+                )
+            )

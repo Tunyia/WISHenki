@@ -1,4 +1,4 @@
-"""Баланс вишенок: начисления за посещённые мероприятия минус списания в магазине."""
+"""Баланс вишенок: (base_reward + bonus_points) за посещения минус списания в магазине."""
 
 from __future__ import annotations
 
@@ -11,7 +11,12 @@ from models.rating import Student, Transaction
 
 def earned_from_attended_events(db: Session, student_id: int) -> int:
     total = (
-        db.query(func.coalesce(func.sum(Activity.base_reward), 0))
+        db.query(
+            func.coalesce(
+                func.sum(Activity.base_reward + ActivityAttendance.bonus_points),
+                0,
+            )
+        )
         .select_from(ActivityAttendance)
         .join(Activity, Activity.id == ActivityAttendance.activity_id)
         .filter(ActivityAttendance.student_id == student_id)

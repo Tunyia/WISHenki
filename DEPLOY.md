@@ -149,9 +149,23 @@ docker compose -f docker-compose.prod.yml --env-file .env restart
 # Бэкап БД
 ./scripts/backup-db.sh
 
+# Список зарегистрированных аккаунтов (email + студент, без паролей)
+docker compose -f docker-compose.prod.yml --env-file .env exec api python list_users.py
+
+# Все студенты рейтинга, включая без аккаунта
+docker compose -f docker-compose.prod.yml --env-file .env exec api python list_users.py --all-students
+
+# Импорт из Excel (2-й семестр)
+docker compose -f docker-compose.prod.yml --env-file .env exec api python import_excel.py --dry-run
+docker compose -f docker-compose.prod.yml --env-file .env exec api python import_excel.py --force
+
 # Полный сброс демо-данных (ОСТОРОЖНО — удалит все данные!)
 docker compose -f docker-compose.prod.yml exec api python seed.py --force --wait 60
 ```
+
+> **Аккаунты vs рейтинг:** `seed.py` создаёт студентов для таблицы лидеров, но не логины.  
+> В `list_users.py` попадают только те, кто **зарегистрировался** на сайте.  
+> После обновления скриптов на сервере: `git pull` и `docker compose -f docker-compose.prod.yml --env-file .env up -d --build api`.
 
 ---
 

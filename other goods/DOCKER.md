@@ -83,7 +83,10 @@ docker compose exec api python seed.py --force --wait 60
 | `docker compose ps` | Статус контейнеров |
 | `docker compose logs api` | Логи бэкенда |
 | `docker compose restart api` | Перезапуск API |
+| `docker compose exec api python list_users.py` | Список аккаунтов |
 | `docker compose down -v` | Остановить и **удалить volume БД** (полный сброс данных) |
+
+> Актуальная версия этого файла — [DOCKER.md](../DOCKER.md) в корне репозитория.
 
 ## Локальная разработка без Docker (как раньше)
 

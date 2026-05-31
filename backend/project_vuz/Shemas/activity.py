@@ -31,3 +31,10 @@ class ActivityParticipantResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class ActivityAttendeeResponse(ActivityParticipantResponse):
+    """Посетивший прошедшее мероприятие с разбивкой начисления."""
+
+    bonus_points: int = 0
+    cherries_earned: int = 0
+

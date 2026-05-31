@@ -5,12 +5,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from API.deps import get_current_student
+from core.attendance import cherries_for_attendance
 from core.database import get_db
 from core.points import sync_student_points
 from models.activity import Activity, ActivityAttendance, ActivityEnrollment
 from models.rating import Item, Student, Transaction
 from Shemas.activity import (
     ActivityCreate,
+    ActivityAttendeeResponse,
     ActivityParticipantResponse,
     ActivityResponse,
 )
@@ -233,7 +235,7 @@ def list_activity_participants(
 
 @router.get(
     "/activities/{activity_id}/attendees",
-    response_model=list[ActivityParticipantResponse],
+    response_model=list[ActivityAttendeeResponse],
 )
 def list_activity_attendees(
     activity_id: int,
@@ -248,20 +250,26 @@ def list_activity_attendees(
             status_code=400,
             detail="Мероприятие ещё не завершено — список записавшихся: /participants",
         )
-    students = (
-        db.query(Student)
-        .join(ActivityAttendance, ActivityAttendance.student_id == Student.id)
+    rows = (
+        db.query(ActivityAttendance, Student)
+        .join(Student, ActivityAttendance.student_id == Student.id)
+        .join(Activity, Activity.id == ActivityAttendance.activity_id)
         .filter(ActivityAttendance.activity_id == activity_id)
-        .order_by(ActivityAttendance.id.asc())
+        .order_by(
+            (Activity.base_reward + ActivityAttendance.bonus_points).desc(),
+            ActivityAttendance.id.asc(),
+        )
         .all()
     )
     return [
-        ActivityParticipantResponse(
-            student_id=s.id,
-            full_name=s.full_name,
-            study_group=s.study_group,
+        ActivityAttendeeResponse(
+            student_id=student.id,
+            full_name=student.full_name,
+            study_group=student.study_group,
+            bonus_points=att.bonus_points,
+            cherries_earned=cherries_for_attendance(activity, att),
         )
-        for s in students
+        for att, student in rows
     ]
 
 

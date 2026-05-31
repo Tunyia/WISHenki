@@ -28,6 +28,7 @@ services:
       PHOTOS_DIR: /photos
     volumes:
       - ./photos:/photos:ro
+      - ./excel_table:/excel_table:ro
     depends_on:
       db:
         condition: service_healthy

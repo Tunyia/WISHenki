@@ -473,6 +473,10 @@ function renderParticipantsList(participants, kind) {
             const youCell = isMe
                 ? '<span class="pm-you-badge">Вы</span>'
                 : '';
+            const cherriesCell =
+                kind === 'past' && p.cherries_earned != null
+                    ? `<td class="pm-td-cherries">${p.cherries_earned}</td>`
+                    : '';
             return `<tr class="${isMe ? 'pm-row-me' : ''}">
                 <td class="pm-td-rank">${i + 1}</td>
                 <td>
@@ -482,10 +486,19 @@ function renderParticipantsList(participants, kind) {
                     </div>
                 </td>
                 <td class="pm-td-group">${escapeHtml(p.study_group)}</td>
+                ${cherriesCell}
                 <td class="pm-td-you">${youCell}</td>
             </tr>`;
         })
         .join('');
+
+    const showCherries = kind === 'past' && list.some((p) => p.cherries_earned != null);
+    const cherriesCol = showCherries
+        ? '<col class="pm-col-cherries" />'
+        : '';
+    const cherriesHead = showCherries
+        ? '<th class="pm-th-cherries" scope="col">Вишенки</th>'
+        : '';
 
     el.innerHTML = `
         <table class="participants-modal-table">
@@ -493,6 +506,7 @@ function renderParticipantsList(participants, kind) {
                 <col class="pm-col-rank" />
                 <col class="pm-col-student" />
                 <col class="pm-col-group" />
+                ${cherriesCol}
                 <col class="pm-col-mark" />
             </colgroup>
             <thead>
@@ -500,6 +514,7 @@ function renderParticipantsList(participants, kind) {
                     <th class="pm-th-rank" scope="col">#</th>
                     <th scope="col">Студент</th>
                     <th class="pm-th-group" scope="col">Группа</th>
+                    ${cherriesHead}
                     <th class="pm-th-mark" scope="col"></th>
                 </tr>
             </thead>
@@ -578,6 +593,22 @@ async function openEventModal(activityId, kind) {
     document.getElementById('modal-title').innerText = activity.title;
     document.getElementById('modal-desc-full').innerText = activity.description;
     document.getElementById('modal-reward').innerText = activity.base_reward;
+    const rewardLabel = document.getElementById('modal-reward-label');
+    const rewardNote = document.getElementById('modal-reward-note');
+    if (rewardLabel) {
+        rewardLabel.textContent =
+            modalActivityKind === 'past' ? 'Базовая награда' : 'Награда за участие';
+    }
+    if (rewardNote) {
+        if (modalActivityKind === 'past') {
+            rewardNote.hidden = false;
+            rewardNote.textContent =
+                'Индивидуальные бонусные вишенки — в таблице посетителей справа.';
+        } else {
+            rewardNote.hidden = true;
+            rewardNote.textContent = '';
+        }
+    }
     document.getElementById('modal-organizer').innerText = activity.organizer;
     document.getElementById('modal-date').innerText = activity.event_date;
 

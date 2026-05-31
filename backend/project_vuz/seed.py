@@ -6,6 +6,7 @@ import time
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from core.attendance import ensure_attendance
 from core.database import Base, SessionLocal, engine
 from core.points import sync_all_students_points, sync_student_points
 from models.activity import Activity, ActivityAttendance, ActivityEnrollment
@@ -43,26 +44,6 @@ def ensure_item(db: Session, name: str, type_: str) -> Item:
     db.commit()
     db.refresh(it)
     return it
-
-
-def ensure_attendance(db: Session, activity: Activity, student: Student) -> None:
-    pair = (activity.id, student.id)
-    for pending in db.new:
-        if (
-            isinstance(pending, ActivityAttendance)
-            and (pending.activity_id, pending.student_id) == pair
-        ):
-            return
-    exists = (
-        db.query(ActivityAttendance)
-        .filter(
-            ActivityAttendance.activity_id == activity.id,
-            ActivityAttendance.student_id == student.id,
-        )
-        .first()
-    )
-    if exists is None:
-        db.add(ActivityAttendance(activity_id=activity.id, student_id=student.id))
 
 
 def grant_cherries_via_events(
