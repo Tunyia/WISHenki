@@ -966,6 +966,222 @@ function renderPastActivities(activities) {
     });
 }
 
+// --- Каталог мерча ---
+let merchProductsData = [];
+/** @type {Map<string, { product: object, quantity: number }>} */
+const merchCart = new Map();
+
+function merchImageUrl(filename) {
+    return `catalog_photos/${encodeURIComponent(filename)}`;
+}
+
+function formatCherriesHtml(amount) {
+    return `${amount} <img src="icons/wishenka.svg" alt="" width="18" height="18">`;
+}
+
+function getMerchCartTotal() {
+    let total = 0;
+    merchCart.forEach(({ product, quantity }) => {
+        total += product.price * quantity;
+    });
+    return total;
+}
+
+function getUserCherryBalance() {
+    const session = getSession();
+    if (!session) return 0;
+    const n = Number(session.cherries);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function setMerchCartError(message) {
+    const el = document.getElementById('merch-cart-error');
+    if (!el) return;
+    if (!message) {
+        el.hidden = true;
+        el.textContent = '';
+        return;
+    }
+    el.hidden = false;
+    el.textContent = message;
+}
+
+function addToMerchCart(productId) {
+    const product = merchProductsData.find((p) => p.id === productId);
+    if (!product) return;
+    const existing = merchCart.get(productId);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        merchCart.set(productId, { product, quantity: 1 });
+    }
+    openMerchCartModal();
+}
+
+function renderMerchCatalog(products) {
+    merchProductsData = Array.isArray(products) ? products : [];
+    const grid = document.getElementById('merch-grid');
+    if (!grid) return;
+    if (!merchProductsData.length) {
+        grid.innerHTML =
+            '<p class="merch-cart-empty">Каталог временно недоступен.</p>';
+        return;
+    }
+    grid.innerHTML = merchProductsData
+        .map(
+            (p) => `
+        <article class="merch-card">
+            <div class="merch-card-image-wrap">
+                <img class="merch-card-image" src="${merchImageUrl(p.image)}" alt="${escapeHtml(p.name)}">
+            </div>
+            <div class="merch-card-body">
+                <h3 class="merch-card-name">${escapeHtml(p.name)}</h3>
+                <div class="merch-card-price">
+                    <span>${p.price}</span>
+                    <img src="icons/wishenka.svg" alt="вишенки">
+                </div>
+                <button type="button" class="btn-merch-order" data-merch-id="${escapeHtml(p.id)}">Заказать!</button>
+            </div>
+        </article>`
+        )
+        .join('');
+
+    grid.querySelectorAll('.btn-merch-order').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addToMerchCart(btn.getAttribute('data-merch-id'));
+        });
+    });
+}
+
+function renderMerchCartModal() {
+    const listEl = document.getElementById('merch-cart-items');
+    const totalEl = document.getElementById('merch-cart-total');
+    const balanceEl = document.getElementById('merch-cart-balance');
+    const hintEl = document.getElementById('merch-cart-hint');
+    const submitBtn = document.getElementById('btn-merch-submit');
+    if (!listEl || !totalEl || !balanceEl || !submitBtn) return;
+
+    setMerchCartError('');
+
+    const loggedIn = !!getSession()?.accessToken;
+    const balance = getUserCherryBalance();
+    const total = getMerchCartTotal();
+
+    if (merchCart.size === 0) {
+        listEl.innerHTML = '<p class="merch-cart-empty">Корзина пуста. Нажмите «Заказать!» у товара.</p>';
+    } else {
+        listEl.innerHTML = [...merchCart.values()]
+            .map(
+                ({ product, quantity }) => `
+            <div class="merch-cart-item">
+                <div>
+                    <div class="merch-cart-item-name">${escapeHtml(product.name)}</div>
+                    <div class="merch-cart-item-meta">${quantity} × ${product.price}</div>
+                </div>
+                <div class="merch-cart-item-price">${formatCherriesHtml(product.price * quantity)}</div>
+            </div>`
+            )
+            .join('');
+    }
+
+    balanceEl.innerHTML = formatCherriesHtml(balance);
+    totalEl.innerHTML = formatCherriesHtml(total);
+
+    if (!loggedIn) {
+        if (hintEl) {
+            hintEl.hidden = false;
+            hintEl.textContent = 'Войдите в аккаунт, чтобы отправить заявку.';
+        }
+        submitBtn.disabled = true;
+        return;
+    }
+
+    if (merchCart.size === 0) {
+        if (hintEl) hintEl.hidden = true;
+        submitBtn.disabled = true;
+        return;
+    }
+
+    if (total > balance) {
+        if (hintEl) {
+            hintEl.hidden = false;
+            hintEl.textContent = `Не хватает ${total - balance} вишенок для оформления заказа.`;
+        }
+        submitBtn.disabled = true;
+        return;
+    }
+
+    if (hintEl) hintEl.hidden = true;
+    submitBtn.disabled = false;
+}
+
+function openMerchCartModal() {
+    const modal = document.getElementById('merch-cart-modal');
+    if (!modal) return;
+    renderMerchCartModal();
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMerchCartModal() {
+    const modal = document.getElementById('merch-cart-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    if (!document.getElementById('event-modal')?.classList.contains('active')
+        && !document.getElementById('auth-modal')?.classList.contains('active')) {
+        document.body.style.overflow = '';
+    }
+}
+
+async function loadMerchCatalog() {
+    try {
+        const products = await apiFetch('/api/merch/products');
+        renderMerchCatalog(products);
+    } catch (e) {
+        console.warn('Не удалось загрузить каталог мерча.', e);
+        renderMerchCatalog([]);
+    }
+}
+
+async function submitMerchOrder() {
+    setMerchCartError('');
+    if (!getSession()?.accessToken) {
+        setMerchCartError('Войдите в аккаунт.');
+        return;
+    }
+    if (merchCart.size === 0) return;
+
+    const items = [...merchCart.entries()].map(([product_id, { quantity }]) => ({
+        product_id,
+        quantity,
+    }));
+
+    try {
+        const result = await apiFetch('/api/merch/orders', {
+            method: 'POST',
+            auth: true,
+            body: { items },
+        });
+        merchCart.clear();
+        const session = getSession();
+        if (session) {
+            session.cherries = result.available_points;
+            setSession(session);
+        }
+        await refreshProfileFromServerOrSession();
+        filterLeaderboard();
+        renderMerchCartModal();
+        closeMerchCartModal();
+        alert(`Заявка #${result.id} отправлена! Списано ${result.total_points} вишенок.`);
+    } catch (err) {
+        setMerchCartError(err.message || 'Не удалось отправить заявку.');
+        renderMerchCartModal();
+    }
+}
+
 // ОСНОВНОЙ БЛОК: Запускаем всё, когда страница загрузилась
 document.addEventListener('DOMContentLoaded', () => {
     updateProfilePanelVisibility();
@@ -1001,6 +1217,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderActivities([]);
             renderPastActivities([]);
         }
+
+        await loadMerchCatalog();
 
         // 2) Профиль: только для вошедшего пользователя (данные сессии + опционально API по studentId).
         await refreshProfileFromServerOrSession();
@@ -1169,4 +1387,10 @@ document.addEventListener('DOMContentLoaded', () => {
             pastToggleBar?.classList.remove('is-open');
         }
     });
+
+    document.getElementById('close-merch-cart')?.addEventListener('click', closeMerchCartModal);
+    document.getElementById('merch-cart-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'merch-cart-modal') closeMerchCartModal();
+    });
+    document.getElementById('btn-merch-submit')?.addEventListener('click', submitMerchOrder);
 });

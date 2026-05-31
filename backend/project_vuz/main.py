@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import OperationalError
 
 from API.auth_routes import router as auth_router
+from API.merch_routes import router as merch_router
 from API.routes import router as api_router
 from core.database import Base, engine
 from core.migrate import ensure_schema_updates
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(_: FastAPI):
     import models.rating  # noqa: F401 — регистрация моделей в metadata
     import models.activity  # noqa: F401 — регистрация моделей в metadata
+    import models.merch  # noqa: F401
 
     try:
         Base.metadata.create_all(bind=engine)
@@ -48,6 +50,7 @@ app.add_middleware(
 
 app.include_router(api_router, prefix="/api")
 app.include_router(auth_router, prefix="/api/auth")
+app.include_router(merch_router, prefix="/api")
 
 # Картинки мероприятий: photos/ в корне репозитория или PHOTOS_DIR (Docker).
 _repo_root = Path(__file__).resolve().parent.parent.parent

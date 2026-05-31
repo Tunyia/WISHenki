@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from models.activity import Activity, ActivityAttendance
+from models.merch import MerchOrder
 from models.rating import Student, Transaction
 
 
@@ -25,6 +26,16 @@ def earned_from_attended_events(db: Session, student_id: int) -> int:
     return int(total or 0)
 
 
+def spent_on_merch_orders(db: Session, student_id: int) -> int:
+    """Сумма вишенок, списанных за заказы мерча."""
+    total = (
+        db.query(func.coalesce(func.sum(MerchOrder.total_points), 0))
+        .filter(MerchOrder.student_id == student_id)
+        .scalar()
+    )
+    return int(total or 0)
+
+
 def spent_in_shop(db: Session, student_id: int) -> int:
     """Сумма потраченных вишенок (отрицательные транзакции)."""
     total = (
@@ -39,13 +50,15 @@ def spent_in_shop(db: Session, student_id: int) -> int:
 
 
 def compute_available_points(db: Session, student_id: int) -> int:
-    return earned_from_attended_events(db, student_id) - spent_in_shop(db, student_id)
+    earned = earned_from_attended_events(db, student_id)
+    spent = spent_in_shop(db, student_id) + spent_on_merch_orders(db, student_id)
+    return max(0, earned - spent)
 
 
 def sync_student_points(db: Session, student: Student) -> None:
     """Пересчитать и сохранить баланс студента в students.*."""
     earned = earned_from_attended_events(db, student.id)
-    spent = spent_in_shop(db, student.id)
+    spent = spent_in_shop(db, student.id) + spent_on_merch_orders(db, student.id)
     student.total_points = earned
     student.available_points = max(0, earned - spent)
 

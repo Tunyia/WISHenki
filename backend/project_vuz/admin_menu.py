@@ -24,6 +24,7 @@ from core.points import sync_student_points
 from core.demo_activities import DEMO_TAG
 from core.security import hash_password
 from models.activity import Activity, ActivityAttendance, ActivityEnrollment
+from models.merch import MerchOrder, MerchOrderItem
 from models.rating import Student, Transaction, User
 
 PAGE_SIZE = 25

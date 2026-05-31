@@ -148,6 +148,14 @@
         <div class="activities-grid" id="past-activities-grid"></div>
     </section>
 
+    <section class="merch-section" id="merch-section">
+        <div class="merch-header">
+            <h2>Каталог мерча</h2>
+            <span class="section-subtitle">Обменяйте вишенки на сувенирную продукцию института</span>
+        </div>
+        <div class="merch-grid" id="merch-grid"></div>
+    </section>
+
     <div id="auth-modal" class="modal-overlay" aria-hidden="true">
         <div class="modal-content auth-modal-content">
             <button type="button" class="close-auth-modal" id="close-auth-modal" aria-label="Закрыть">&times;</button>
@@ -260,6 +268,31 @@
             <div class="modal-footer" id="modal-footer">
                 <p class="modal-register-hint" id="btn-register-hint">Войдите в аккаунт, чтобы записаться на мероприятие.</p>
                 <button type="button" class="btn-register" id="btn-event-register">Записаться на мероприятие</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="merch-cart-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content merch-cart-modal">
+            <button type="button" class="close-merch-cart" id="close-merch-cart" aria-label="Закрыть">&times;</button>
+            <div class="merch-cart-body">
+                <h2 class="merch-cart-title">Корзина</h2>
+                <div id="merch-cart-error" class="merch-cart-error" role="alert" hidden></div>
+                <div id="merch-cart-items" class="merch-cart-items"></div>
+                <div class="merch-cart-summary">
+                    <div class="merch-cart-row">
+                        <span>Ваш баланс</span>
+                        <span class="merch-cart-balance" id="merch-cart-balance">0</span>
+                    </div>
+                    <div class="merch-cart-row merch-cart-row-total">
+                        <span>Итого к списанию</span>
+                        <span class="merch-cart-total" id="merch-cart-total">0</span>
+                    </div>
+                </div>
+                <p class="merch-cart-hint" id="merch-cart-hint" hidden></p>
+                <button type="button" class="btn-merch-submit" id="btn-merch-submit" disabled>
+                    Отправить заявку!
+                </button>
             </div>
         </div>
     </div>

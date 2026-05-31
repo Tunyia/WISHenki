@@ -15,6 +15,7 @@ class Student(Base):
 
     transactions = relationship("Transaction", back_populates="student")
     user = relationship("User", back_populates="student", uselist=False)
+    merch_orders = relationship("MerchOrder", back_populates="student")
 
 
 class User(Base):
