@@ -28,6 +28,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from core.attendance import upsert_attendance
+from core.activity_tags import with_imported_past_tag
 from core.database import Base, SessionLocal, engine
 from core.migrate import ensure_schema_updates
 from models.activity import Activity, ActivityAttendance, ActivityEnrollment
@@ -304,7 +305,7 @@ def import_parsed(db: Session, data: ParseResult, *, dry_run: bool) -> dict:
                 f"Импорт из Excel («{data.sheet_title}»). "
                 f"Категории: {', '.join(event.categories)}."
             ),
-            categories=tags,
+            categories=with_imported_past_tag(tags),
             base_reward=0,
             event_date=extract_event_date(event.title),
             images=[],

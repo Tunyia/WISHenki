@@ -2,7 +2,33 @@
 
 from sqlalchemy import inspect, text
 
-from core.database import engine
+from core.activity_tags import with_imported_past_tag
+from core.database import SessionLocal, engine
+
+
+def ensure_imported_past_tag() -> None:
+    """Добавить тег «прошедшие» импортированным мероприятиям, если его ещё нет."""
+    import models.activity  # noqa: F401
+    from models.activity import Activity
+
+    with SessionLocal() as db:
+        activities = (
+            db.query(Activity)
+            .filter(
+                Activity.is_completed.is_(True),
+                Activity.organizer == "ДПИШ",
+                Activity.description.like("Импорт из Excel%"),
+            )
+            .all()
+        )
+        changed = False
+        for act in activities:
+            updated = with_imported_past_tag(list(act.categories or []))
+            if updated != (act.categories or []):
+                act.categories = updated
+                changed = True
+        if changed:
+            db.commit()
 
 
 def ensure_schema_updates() -> None:
@@ -29,3 +55,5 @@ def ensure_schema_updates() -> None:
                     "ADD COLUMN bonus_points INTEGER NOT NULL DEFAULT 0"
                 )
             )
+
+    ensure_imported_past_tag()
