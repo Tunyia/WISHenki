@@ -7,6 +7,7 @@
 Запуск (Docker, из корня репозитория):
   docker compose exec api python seed_demo_activities.py
   docker compose exec api python seed_demo_activities.py --dry-run
+  docker compose exec api python seed_demo_activities.py --update-images
 
 Prod:
   docker compose -f docker-compose.prod.yml --env-file .env exec api python seed_demo_activities.py
@@ -21,7 +22,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from core.database import Base, SessionLocal, engine
-from core.demo_activities import DEMO_UPCOMING_ACTIVITIES
+from core.demo_activities import DEMO_UPCOMING_ACTIVITIES, DEMO_ACTIVITY_IMAGES
 from core.migrate import ensure_schema_updates
 from models.activity import Activity
 
@@ -48,26 +49,34 @@ def ensure_schema() -> None:
     ensure_schema_updates()
 
 
-def add_demo_activities(db: Session, *, dry_run: bool) -> dict:
+def add_demo_activities(db: Session, *, dry_run: bool, update_images: bool) -> dict:
     added: list[str] = []
     skipped: list[str] = []
+    updated_images: list[str] = []
 
     for tpl in DEMO_UPCOMING_ACTIVITIES:
         title = tpl["title"]
-        exists = (
-            db.query(Activity.id).filter(Activity.title == title).limit(1).first()
-        )
-        if exists is not None:
+        existing = db.query(Activity).filter(Activity.title == title).one_or_none()
+        if existing is not None:
             skipped.append(title)
+            if update_images and existing.images != DEMO_ACTIVITY_IMAGES:
+                if not dry_run:
+                    existing.images = list(DEMO_ACTIVITY_IMAGES)
+                updated_images.append(title)
             continue
         if not dry_run:
             db.add(Activity(**tpl))
         added.append(title)
 
-    if not dry_run and added:
+    if not dry_run and (added or updated_images):
         db.commit()
 
-    return {"added": added, "skipped": skipped, "dry_run": dry_run}
+    return {
+        "added": added,
+        "skipped": skipped,
+        "updated_images": updated_images,
+        "dry_run": dry_run,
+    }
 
 
 def main() -> None:
@@ -79,6 +88,11 @@ def main() -> None:
         action="store_true",
         help="Только показать, что будет добавлено",
     )
+    parser.add_argument(
+        "--update-images",
+        action="store_true",
+        help="Обновить images у уже существующих демо-мероприятий",
+    )
     parser.add_argument("--wait", type=int, default=30, help="Секунд ждать БД")
     args = parser.parse_args()
 
@@ -87,7 +101,9 @@ def main() -> None:
 
     db = SessionLocal()
     try:
-        result = add_demo_activities(db, dry_run=args.dry_run)
+        result = add_demo_activities(
+            db, dry_run=args.dry_run, update_images=args.update_images
+        )
     finally:
         db.close()
 
@@ -104,6 +120,11 @@ def main() -> None:
         print(f"  Пропущено — уже в БД ({len(result['skipped'])}):")
         for title in result["skipped"]:
             print(f"    ~ {title}")
+
+    if result["updated_images"]:
+        print(f"  Обновлены картинки ({len(result['updated_images'])}):")
+        for title in result["updated_images"]:
+            print(f"    * {title}")
 
 
 if __name__ == "__main__":

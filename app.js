@@ -265,6 +265,34 @@ function updateProfilePanelVisibility() {
     if (user) user.hidden = !loggedIn;
 }
 
+// ===== EASTER_EGG start — удалить весь блок до EASTER_EGG end =====
+const DEFAULT_PROFILE_AVATAR = 'images/avatarka.png';
+const EASTER_EGG_PROFILE_AVATAR = 'images/pashalko.png';
+
+function matchesEasterEggProfile(profile) {
+    if (!profile) return false;
+    const group = String(profile.group || profile.study_group || '').trim();
+    if (group !== 'ШЦТ-111') return false;
+
+    const lastName = String(profile.lastName || '').trim().toLowerCase();
+    const firstName = String(profile.firstName || '').trim().toLowerCase();
+    if (lastName === 'бончев' && firstName === 'глеб') return true;
+
+    const fullName = String(profile.fullName || profile.full_name || '')
+        .trim()
+        .toLowerCase();
+    return fullName.startsWith('бончев глеб');
+}
+
+function applyProfileAvatar(profile) {
+    const img = document.getElementById('user-avatar-img');
+    if (!img) return;
+    img.src = matchesEasterEggProfile(profile)
+        ? EASTER_EGG_PROFILE_AVATAR
+        : DEFAULT_PROFILE_AVATAR;
+}
+// ===== EASTER_EGG end =====
+
 async function refreshProfileFromServerOrSession() {
     updateProfilePanelVisibility();
     const session = getSession();
@@ -279,6 +307,7 @@ async function refreshProfileFromServerOrSession() {
         cherries: session.cherries != null ? session.cherries : 0,
     };
     renderProfile(fallback);
+    applyProfileAvatar({ ...session, fullName: fallback.fullName, group: fallback.group });
 
     try {
         const me = await apiFetch('/api/auth/me', { auth: true });
@@ -289,6 +318,11 @@ async function refreshProfileFromServerOrSession() {
             group: me.study_group,
             role: 'Студент',
             cherries: me.available_points,
+        });
+        applyProfileAvatar({
+            ...next,
+            fullName: me.full_name,
+            group: me.study_group,
         });
     } catch (e) {
         console.warn('Не удалось обновить профиль по /api/auth/me (токен истёк или бэкенд недоступен).', e);
@@ -301,6 +335,11 @@ async function refreshProfileFromServerOrSession() {
                 group: me.study_group,
                 role: 'Студент',
                 cherries: me.available_points,
+            });
+            applyProfileAvatar({
+                ...session,
+                fullName: me.full_name,
+                group: me.study_group,
             });
             session.cherries = me.available_points;
             setSession(session);
