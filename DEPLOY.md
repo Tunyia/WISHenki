@@ -159,12 +159,14 @@ docker compose -f docker-compose.prod.yml --env-file .env exec api python list_u
 docker compose -f docker-compose.prod.yml --env-file .env exec api python import_excel.py --dry-run
 docker compose -f docker-compose.prod.yml --env-file .env exec api python import_excel.py --force
 
-# Меню администратора (интерактивно, флаг -it)
+# Меню администратора (интерактивное CRUD-меню, флаг -it)
 docker compose -f docker-compose.prod.yml --env-file .env exec -it api python admin_menu.py
 
 # Полный сброс демо-данных (ОСТОРОЖНО — удалит все данные!)
 docker compose -f docker-compose.prod.yml exec api python seed.py --force --wait 60
 ```
+
+Подробная инструкция по `admin_menu.py` (разделы меню, сброс пароля, запись на мероприятия): [DOCKER.md](DOCKER.md#меню-администратора-admin_menupy).
 
 > **Аккаунты vs рейтинг:** `seed.py` создаёт студентов для таблицы лидеров, но не логины.  
 > В `list_users.py` попадают только те, кто **зарегистрировался** на сайте.  

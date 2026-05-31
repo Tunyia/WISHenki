@@ -440,6 +440,39 @@ body {
 .leaderboard-table th:nth-child(3) { width: 20%; }
 .leaderboard-table th:nth-child(4) { width: 20%; }
 
+.leaderboard-toggle-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.btn-toggle-leaderboard {
+    padding: 12px 28px;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+.btn-toggle-leaderboard:hover {
+    transform: scale(1.02);
+    border-color: var(--cherry-red);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+}
+
+.leaderboard-toggle-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
 .student-cell { display: flex; align-items: center; gap: 12px; font-weight: 500; }
 .student-avatar-mini {
     width: 32px; height: 32px;

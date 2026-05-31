@@ -54,6 +54,16 @@ docker compose exec api python import_excel.py --force
 
 `--force` удаляет текущие данные (студентов, мероприятия, аккаунты) и заливает из таблицы.
 
+### Меню администратора (`admin_menu.py`)
+
+Интерактивное CRUD-меню в консоли (студенты, аккаунты, мероприятия). Подробнее — [DOCKER.md](DOCKER.md#меню-администратора-admin_menupy).
+
+```powershell
+docker compose exec -it api python admin_menu.py
+```
+
+На VPS: `docker compose -f docker-compose.prod.yml --env-file .env exec -it api python admin_menu.py`
+
 ---
 
 ## Структура репозитория (кратко)

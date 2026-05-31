@@ -94,6 +94,24 @@ docker compose exec api python list_users.py --all-students
 
 `seed.py` создаёт студентов рейтинга **без** логинов — в `list_users.py` только зарегистрировавшиеся на сайте.
 
+## Меню администратора (`admin_menu.py`)
+
+Интерактивное меню с выбором действий по цифрам: просмотр студентов (с аккаунтом и без), запись на мероприятия, посещения, удаление аккаунта или студента, сброс пароля.
+
+**Docker** (из корня репозитория, флаг `-it` обязателен):
+
+```powershell
+docker compose exec -it api python admin_menu.py
+```
+
+**Локально через venv** (из `backend/project_vuz`, при работающей БД):
+
+```powershell
+.\.venv\Scripts\python admin_menu.py
+```
+
+Полная инструкция: [DOCKER.md](../../DOCKER.md#меню-администратора-admin_menupy).
+
 ## Как “очистить БД и заполнить заново” (полный сброс через Docker volume)
 Проще всего удалить Docker volume с данными Postgres (это полностью сбросит БД):
 

@@ -23,6 +23,3 @@ SQL_ECHO = os.environ.get("SQL_ECHO", "false").lower() in ("1", "true", "yes")
 SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-only-change-me-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))  # 7 суток
-
-# Группы, разрешённые при регистрации (как на фронте)
-ALLOWED_STUDY_GROUPS = frozenset({"ШЦТ-111", "ШЦТ-112", "ГЛЭК-111"})

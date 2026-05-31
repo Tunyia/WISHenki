@@ -5,7 +5,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from API.deps import get_current_student
-from core.config import ALLOWED_STUDY_GROUPS
 from core.database import get_db
 from core.points import sync_student_points
 from core.security import create_access_token, hash_password, verify_password
@@ -44,7 +43,13 @@ def register(
     db: Annotated[Session, Depends(get_db)],
 ):
     email = payload.email.strip().lower()
-    if payload.study_group not in ALLOWED_STUDY_GROUPS:
+    group_exists = (
+        db.query(Student.id)
+        .filter(Student.study_group == payload.study_group)
+        .limit(1)
+        .first()
+    )
+    if group_exists is None:
         raise HTTPException(
             status_code=400,
             detail="Указана недопустимая группа",

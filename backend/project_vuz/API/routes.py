@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import desc, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -39,15 +40,43 @@ def _student_response(db: Session, student: Student) -> StudentResponse:
 def list_students(
     db: Annotated[Session, Depends(get_db)],
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(100, ge=1, le=2000),
+    search: str | None = None,
+    study_group: str | None = None,
 ):
-    students = db.query(Student).offset(skip).limit(limit).all()
+    q = db.query(Student)
+    if search:
+        term = f"%{search.strip()}%"
+        q = q.filter(
+            or_(Student.full_name.ilike(term), Student.study_group.ilike(term))
+        )
+    if study_group:
+        q = q.filter(Student.study_group == study_group)
+    students = (
+        q.order_by(desc(Student.available_points), Student.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     for st in students:
         sync_student_points(db, st)
     db.commit()
     for st in students:
         db.refresh(st)
     return students
+
+
+@router.get("/students/groups", response_model=list[str])
+def list_study_groups(
+    db: Annotated[Session, Depends(get_db)],
+):
+    rows = (
+        db.query(Student.study_group)
+        .distinct()
+        .order_by(Student.study_group)
+        .all()
+    )
+    return [row[0] for row in rows if row[0]]
 
 
 @router.post("/students", response_model=StudentResponse, status_code=201)

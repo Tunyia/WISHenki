@@ -1,9 +1,6 @@
 // Сессия: JWT и профиль с бэкенда (/api/auth).
 const SESSION_KEY = 'wishenki_session';
 
-/** Группы для регистрации (как в фильтре рейтинга). */
-const AVAILABLE_GROUPS = ['ШЦТ-111', 'ШЦТ-112', 'ГЛЭК-111'];
-
 // Пустая строка — запросы на тот же хост (Docker + nginx проксирует /api).
 // Порт 5500 — локальный python -m http.server, API отдельно на :8000.
 const API_BASE = window.location.port === '5500' ? 'http://127.0.0.1:8000' : '';
@@ -121,12 +118,39 @@ function showAuthView(mode) {
     }
 }
 
-function populateRegisterGroupSelect() {
-    const sel = document.getElementById('reg-group');
-    if (!sel) return;
-    sel.innerHTML =
-        '<option value="" disabled selected>Выберите группу</option>' +
-        AVAILABLE_GROUPS.map((g) => `<option value="${g}">${g}</option>`).join('');
+function populateGroupSelects(groups) {
+    const sorted = [...new Set(groups.filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, 'ru')
+    );
+    const optionsHtml = sorted
+        .map((g) => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`)
+        .join('');
+
+    const filterSel = document.getElementById('group-filter');
+    if (filterSel) {
+        const current = filterSel.value;
+        filterSel.innerHTML = `<option value="">Все группы</option>${optionsHtml}`;
+        if (current && sorted.includes(current)) {
+            filterSel.value = current;
+        }
+    }
+
+    const regSel = document.getElementById('reg-group');
+    if (regSel) {
+        regSel.innerHTML =
+            '<option value="" disabled selected>Выберите группу</option>' + optionsHtml;
+    }
+}
+
+async function loadStudyGroups() {
+    let groups = [];
+    try {
+        groups = await apiFetch('/api/students/groups');
+    } catch (e) {
+        console.warn('Не удалось загрузить список групп с API.', e);
+        groups = [...new Set(mockLeaderboardData.map((s) => s.group).filter(Boolean))];
+    }
+    populateGroupSelects(groups);
 }
 
 function openAuthModal(mode) {
@@ -246,8 +270,85 @@ async function apiFetch(path, options = {}) {
 // Данные приходят с API; этот массив нужен как общий источник для рендера/фильтра
 const mockLeaderboardData = [];
 
+const LEADERBOARD_COLLAPSED_LIMIT = 50;
+const LEADERBOARD_PAGE_SIZE = 500;
+let leaderboardExpanded = false;
+let leaderboardSearchTimer = null;
+
 let upcomingActivitiesData = [];
 let pastActivitiesData = [];
+
+function studentsToLeaderboard(students) {
+    return students
+        .map((s) => ({
+            id: s.id,
+            fullName: s.full_name,
+            group: s.study_group,
+            cherries: s.available_points,
+        }))
+        .sort((a, b) => b.cherries - a.cherries || a.id - b.id);
+}
+
+async function fetchStudentsFromApi({ search, studyGroup } = {}) {
+    const all = [];
+    let skip = 0;
+    while (true) {
+        const params = new URLSearchParams({
+            skip: String(skip),
+            limit: String(LEADERBOARD_PAGE_SIZE),
+        });
+        if (search) params.set('search', search);
+        if (studyGroup) params.set('study_group', studyGroup);
+        const batch = await apiFetch(`/api/students?${params}`);
+        if (!batch.length) break;
+        all.push(...batch);
+        if (batch.length < LEADERBOARD_PAGE_SIZE) break;
+        skip += LEADERBOARD_PAGE_SIZE;
+    }
+    return all;
+}
+
+async function reloadLeaderboardData() {
+    const students = await fetchStudentsFromApi();
+    mockLeaderboardData.length = 0;
+    mockLeaderboardData.push(...studentsToLeaderboard(students));
+}
+
+function updateLeaderboardToggle(totalCount, hasFilter) {
+    const bar = document.getElementById('leaderboard-toggle-bar');
+    const btn = document.getElementById('btn-toggle-leaderboard');
+    const hint = document.getElementById('leaderboard-toggle-hint');
+    if (!bar || !btn) return;
+
+    if (hasFilter || totalCount <= LEADERBOARD_COLLAPSED_LIMIT) {
+        bar.hidden = true;
+        return;
+    }
+
+    bar.hidden = false;
+    if (leaderboardExpanded) {
+        btn.textContent = 'Свернуть';
+        btn.setAttribute('aria-expanded', 'true');
+        if (hint) hint.textContent = `Показаны все ${totalCount} студентов`;
+    } else {
+        btn.textContent = 'Показать больше';
+        btn.setAttribute('aria-expanded', 'false');
+        if (hint) {
+            hint.textContent = `Показаны первые ${LEADERBOARD_COLLAPSED_LIMIT} из ${totalCount}`;
+        }
+    }
+}
+
+function applyLeaderboardView(filteredData, hasFilter) {
+    let visible;
+    if (hasFilter || leaderboardExpanded) {
+        visible = filteredData;
+    } else {
+        visible = filteredData.slice(0, LEADERBOARD_COLLAPSED_LIMIT);
+    }
+    renderLeaderboard(visible);
+    updateLeaderboardToggle(filteredData.length, hasFilter);
+}
 
 // Функция для обновления верхней личной карточки
 function renderProfile(data) {
@@ -308,24 +409,45 @@ function renderLeaderboard(data) {
 
 // Функция фильтрации (работает "на лету" при вводе)
 function filterLeaderboard() {
-    const searchText = document.getElementById('search-input').value.toLowerCase();
-    const filterGroup = document.getElementById('group-filter').value;
+    clearTimeout(leaderboardSearchTimer);
 
-    const filteredData = mockLeaderboardData.filter(student => {
-        // Ищем совпадения в ФИО ИЛИ в названии группы
-        const matchText = student.fullName.toLowerCase().includes(searchText) || 
-                          student.group.toLowerCase().includes(searchText);
-        
-        // Проверяем фильтр по группе (если пусто - показываем все)
-        const matchGroup = filterGroup === "" || student.group === filterGroup;
-        
+    const searchText = (document.getElementById('search-input').value || '').trim();
+    const filterGroup = document.getElementById('group-filter').value;
+    const hasFilter = Boolean(searchText || filterGroup);
+
+    if (searchText.length >= 2) {
+        leaderboardSearchTimer = setTimeout(async () => {
+            try {
+                const students = await fetchStudentsFromApi({
+                    search: searchText,
+                    studyGroup: filterGroup || undefined,
+                });
+                applyLeaderboardView(studentsToLeaderboard(students), true);
+            } catch (e) {
+                console.warn('Поиск студентов не удался, используем локальные данные.', e);
+                filterLeaderboardLocal(searchText, filterGroup, hasFilter);
+            }
+        }, 300);
+        return;
+    }
+
+    filterLeaderboardLocal(searchText, filterGroup, hasFilter);
+}
+
+function filterLeaderboardLocal(searchText, filterGroup, hasFilter) {
+    const searchLower = searchText.toLowerCase();
+
+    const filteredData = mockLeaderboardData.filter((student) => {
+        const matchText =
+            !searchLower ||
+            student.fullName.toLowerCase().includes(searchLower) ||
+            student.group.toLowerCase().includes(searchLower);
+        const matchGroup = filterGroup === '' || student.group === filterGroup;
         return matchText && matchGroup;
     });
 
-    // Сортируем по убыванию вишенок (на случай, если данные придут вразнобой)
-    filteredData.sort((a, b) => b.cherries - a.cherries);
-
-    renderLeaderboard(filteredData);
+    filteredData.sort((a, b) => b.cherries - a.cherries || a.id - b.id);
+    applyLeaderboardView(filteredData, hasFilter);
 }
 
 // Вспомогательная функция для подбора цвета тега
@@ -719,30 +841,18 @@ function renderPastActivities(activities) {
 // ОСНОВНОЙ БЛОК: Запускаем всё, когда страница загрузилась
 document.addEventListener('DOMContentLoaded', () => {
     updateProfilePanelVisibility();
-    populateRegisterGroupSelect();
 
     (async () => {
         // 1) Лидерборд: всегда пытаемся взять реальный список студентов.
         // Если список недоступен (бэк не запущен) — только тогда падаем на моки.
         try {
-            const students = await apiFetch('/api/students?skip=0&limit=500');
-            const leaderboard = students
-                .map(s => ({
-                    id: s.id,
-                    fullName: s.full_name,
-                    group: s.study_group,
-                    cherries: s.available_points,
-                }))
-                .sort((a, b) => b.cherries - a.cherries);
-
-            mockLeaderboardData.length = 0;
-            mockLeaderboardData.push(...leaderboard);
+            await reloadLeaderboardData();
         } catch (e) {
             console.warn('Не удалось загрузить список студентов с API, используем моки.', e);
         }
 
-        mockLeaderboardData.sort((a, b) => b.cherries - a.cherries);
-        renderLeaderboard(mockLeaderboardData);
+        await loadStudyGroups();
+        filterLeaderboard();
 
         // 1b) Мероприятия (предстоящие и прошедшие)
         try {
@@ -870,20 +980,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setSession(sessionFromTokenPayload(data));
             closeAuthModal();
             try {
-                const students = await apiFetch('/api/students?skip=0&limit=500');
-                const leaderboard = students
-                    .map((s) => ({
-                        id: s.id,
-                        fullName: s.full_name,
-                        group: s.study_group,
-                        cherries: s.available_points,
-                    }))
-                    .sort((a, b) => b.cherries - a.cherries);
-                mockLeaderboardData.length = 0;
-                mockLeaderboardData.push(...leaderboard);
-                renderLeaderboard(mockLeaderboardData);
+                await reloadLeaderboardData();
             } catch (_) {
-                filterLeaderboard();
+                /* ignore */
             }
             await refreshProfileFromServerOrSession();
             filterLeaderboard();
@@ -908,6 +1007,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Фильтры таблицы
     document.getElementById('search-input').addEventListener('input', filterLeaderboard);
     document.getElementById('group-filter').addEventListener('change', filterLeaderboard);
+
+    document.getElementById('btn-toggle-leaderboard')?.addEventListener('click', () => {
+        leaderboardExpanded = !leaderboardExpanded;
+        filterLeaderboard();
+    });
 
     // Фильтры мероприятий (как у рейтинга)
     document.getElementById('activity-search')?.addEventListener('input', filterActivities);
