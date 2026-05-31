@@ -633,7 +633,7 @@ body {
 .tag-it { background: #d2dafc; color: #0a45e7; }
 .tag-science { background: #d1fac6; color: #15803d; }
 .tag-social { background: #fcd2d5; color: var(--cherry-red); }
-.tag-past { background: #fee2e2; color: #991b1b; font-weight: 600; }
+.tag-past { background: #475569; color: #dbdbdb;; font-weight: 600; }
 .tag-default { background: #dbdbdb; color: #475569; }
 
 .activity-title { font-size: 1.25rem; font-weight: 600; margin: 0 0 10px 0; line-height: 1.3; }
