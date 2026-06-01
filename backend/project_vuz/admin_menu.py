@@ -14,7 +14,7 @@ import argparse
 import sys
 import time
 
-from sqlalchemy import text
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from core.attendance import cherries_for_attendance, upsert_attendance
@@ -46,6 +46,7 @@ def wait_for_db(timeout_s: int = 30) -> None:
 
 def ensure_schema() -> None:
     import models.activity  # noqa: F401
+    import models.merch  # noqa: F401
     import models.rating  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
@@ -122,6 +123,12 @@ def print_stats(db: Session) -> None:
     print(f"  Мероприятий прошедших:    {past}")
     print(f"  Записей на мероприятия:   {enrollments}")
     print(f"  Посещений (архив):        {attendances}")
+    merch_orders = db.query(MerchOrder).count()
+    total_merch_points = int(
+        db.query(func.coalesce(func.sum(MerchOrder.total_points), 0)).scalar() or 0
+    )
+    print(f"  Заказов мерча:            {merch_orders}")
+    print(f"  Списано на мерч (вишенки): {total_merch_points}")
 
 
 def print_students_table(
@@ -715,6 +722,137 @@ def menu_accounts(db: Session) -> None:
             print("Неверный пункт.")
 
 
+def format_order_datetime(value) -> str:
+    if value is None:
+        return "—"
+    try:
+        return value.strftime("%d.%m.%Y %H:%M")
+    except AttributeError:
+        return str(value)
+
+
+def print_merch_orders_table(
+    db: Session,
+    *,
+    student_id: int | None = None,
+    offset: int = 0,
+) -> int:
+    q = (
+        db.query(MerchOrder, Student)
+        .join(Student, Student.id == MerchOrder.student_id)
+        .order_by(MerchOrder.created_at.desc(), MerchOrder.id.desc())
+    )
+    if student_id is not None:
+        q = q.filter(MerchOrder.student_id == student_id)
+
+    rows = q.all()
+    total = len(rows)
+    page = rows[offset : offset + PAGE_SIZE]
+
+    if student_id is not None:
+        print(f"\nЗаказы студента #{student_id}: {total} шт.")
+    else:
+        print(f"\nВсе заказы мерча: {total} шт.")
+    if not page:
+        print("  (пусто)")
+        return 0
+
+    print(f"  Показано {offset + 1}–{offset + len(page)} из {total}\n")
+    for order, student in page:
+        items_count = len(order.items)
+        print(
+            f"  #{order.id:>4}  {format_order_datetime(order.created_at)}  "
+            f"{student.full_name} ({student.study_group})  "
+            f"{order.total_points} виш.  позиций: {items_count}"
+        )
+    return len(page)
+
+
+def print_merch_order_detail(db: Session, order_id: int) -> None:
+    order = db.get(MerchOrder, order_id)
+    if not order:
+        print("Заказ не найден.")
+        return
+    student = db.get(Student, order.student_id)
+    print_header(f"Заказ мерча #{order.id}")
+    if student:
+        print(f"  Студент:   {student.full_name} ({student.study_group}), id={student.id}")
+    else:
+        print(f"  Студент:   id={order.student_id} (удалён)")
+    print(f"  Дата:      {format_order_datetime(order.created_at)}")
+    print(f"  Итого:     {order.total_points} вишенок")
+    print("\n  Состав заказа:")
+    if not order.items:
+        print("    (нет позиций)")
+        return
+    for item in order.items:
+        print(
+            f"    • {item.product_name}  "
+            f"{item.quantity} × {item.unit_price} = {item.line_total} виш."
+        )
+
+
+def menu_merch_orders(db: Session) -> None:
+    offset = 0
+    filter_student_id: int | None = None
+    while True:
+        print_header("Заказы мерча")
+        if filter_student_id is not None:
+            st = db.get(Student, filter_student_id)
+            label = st.full_name if st else f"id={filter_student_id}"
+            print(f"  Фильтр: студент {label}")
+        print("  1 — все заказы (список)")
+        print("  2 — детали заказа по ID")
+        print("  3 — заказы конкретного студента")
+        print("  4 — сбросить фильтр по студенту")
+        print("  9 — следующая страница списка")
+        print("  0 — назад")
+        choice = read_int("Выбор: ")
+
+        if choice == 0:
+            return
+        if choice == 1:
+            offset = 0
+            shown = print_merch_orders_table(
+                db, student_id=filter_student_id, offset=offset
+            )
+            if shown == PAGE_SIZE:
+                print("\n  (есть ещё — пункт 9)")
+            pause()
+        elif choice == 2:
+            oid = read_int("ID заказа: ")
+            if oid is None:
+                continue
+            print_merch_order_detail(db, oid)
+            pause()
+        elif choice == 3:
+            sid = read_int("student_id: ")
+            if sid is None:
+                continue
+            if not db.get(Student, sid):
+                print("Студент не найден.")
+            else:
+                filter_student_id = sid
+                offset = 0
+            pause()
+        elif choice == 4:
+            filter_student_id = None
+            offset = 0
+            print("Фильтр сброшен.")
+            pause()
+        elif choice == 9:
+            offset += PAGE_SIZE
+            shown = print_merch_orders_table(
+                db, student_id=filter_student_id, offset=offset
+            )
+            if shown == 0:
+                print("Больше записей нет.")
+                offset = max(0, offset - PAGE_SIZE)
+            pause()
+        else:
+            print("Неверный пункт.")
+
+
 def main_menu(db: Session) -> None:
     while True:
         print_header("WISHenki — меню администратора")
@@ -722,6 +860,7 @@ def main_menu(db: Session) -> None:
         print("  2 — мероприятия (запись / посещения)")
         print("  3 — аккаунты")
         print("  4 — статистика")
+        print("  5 — заказы мерча")
         print("  0 — выход")
         choice = read_int("Выбор: ")
 
@@ -737,6 +876,8 @@ def main_menu(db: Session) -> None:
         elif choice == 4:
             print_stats(db)
             pause()
+        elif choice == 5:
+            menu_merch_orders(db)
         else:
             print("Неверный пункт.")
 

@@ -7,3 +7,4 @@ COPY index.html app.js style.css /usr/share/nginx/html/
 COPY images /usr/share/nginx/html/images
 COPY icons /usr/share/nginx/html/icons
 COPY catalog_photos /usr/share/nginx/html/catalog_photos
+COPY fonts /usr/share/nginx/html/fonts
