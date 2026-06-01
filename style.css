@@ -1292,7 +1292,7 @@ body {
 
 .merch-card-image-wrap {
     width: 100%;
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 4 / 3;
     background: #f0f7ff;
     display: flex;
     align-items: center;
