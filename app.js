@@ -1047,7 +1047,9 @@ function renderMerchCatalog(products) {
         .map(
             (p) => `
         <article class="merch-card">
-            <img class="merch-card-image" src="${merchImageUrl(p.image)}" alt="${escapeHtml(p.name)}">
+            <div class="merch-card-image-wrap">
+                <img class="merch-card-image" src="${merchImageUrl(p.image)}" alt="${escapeHtml(p.name)}">
+            </div>
             <div class="merch-card-body">
                 <h3 class="merch-card-name">${escapeHtml(p.name)}</h3>
                 <div class="merch-card-price">

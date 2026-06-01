@@ -1271,7 +1271,7 @@ body {
 .merch-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
+    gap: 14px;
 }
 
 .merch-card {
@@ -1290,12 +1290,25 @@ body {
     box-shadow: 0 8px 20px rgba(1, 69, 144, 0.12);
 }
 
+.merch-card-image-wrap {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    background: #f0f7ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    box-sizing: border-box;
+}
+
 .merch-card-image {
     display: block;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    background: #f0f7ff;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    object-position: center;
 }
 
 .merch-card-body {
@@ -1900,7 +1913,12 @@ body {
 
     .merch-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        gap: 10px;
+    }
+
+    .merch-card-image-wrap {
+        aspect-ratio: 6 / 5;
+        padding: 8px 10px;
     }
 
     .merch-card-name {
