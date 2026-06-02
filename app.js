@@ -133,15 +133,18 @@ function getRegIdentityPayload() {
 function applyRegStudentCheckResult(result) {
     if (!result.found) {
         regStudentClaimOk = false;
+        setAuthError('');
         setRegStudentHint(result.message, 'is-error');
         return false;
     }
     if (result.already_registered) {
         regStudentClaimOk = false;
+        setAuthError('');
         setRegStudentHint(result.message, 'is-warning');
         return false;
     }
     regStudentClaimOk = true;
+    setAuthError('');
     setRegStudentHint(result.message, 'is-success');
     return true;
 }
@@ -1335,9 +1338,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const verify = await verifyRegStudentClaimImmediate();
             if (!verify.ok) {
-                setAuthError(verify.message);
                 return;
             }
+            setAuthError('');
             const body = {
                 email,
                 password,

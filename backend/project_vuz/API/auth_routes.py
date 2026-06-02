@@ -92,7 +92,7 @@ def check_student(
         found=True,
         full_name=student.full_name,
         study_group=student.study_group,
-        message=f"Найден в рейтинге: {student.full_name}, группа {student.study_group}",
+        message=f"Найден в списке: {student.full_name}, группа {student.study_group}",
     )
 
 
