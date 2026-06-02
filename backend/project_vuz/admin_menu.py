@@ -13,6 +13,8 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from dataclasses import dataclass
+from datetime import datetime
 
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
@@ -25,7 +27,7 @@ from core.demo_activities import DEMO_TAG
 from core.security import hash_password
 from models.activity import Activity, ActivityAttendance, ActivityEnrollment
 from models.merch import MerchOrder, MerchOrderItem
-from models.rating import Student, Transaction, User
+from models.rating import Item, Student, Transaction, User
 
 PAGE_SIZE = 25
 
@@ -127,8 +129,19 @@ def print_stats(db: Session) -> None:
     total_merch_points = int(
         db.query(func.coalesce(func.sum(MerchOrder.total_points), 0)).scalar() or 0
     )
+    shop_deductions = (
+        db.query(Transaction).filter(Transaction.points_change < 0).count()
+    )
+    total_shop_points = int(
+        db.query(func.coalesce(func.sum(-Transaction.points_change), 0))
+        .filter(Transaction.points_change < 0)
+        .scalar()
+        or 0
+    )
     print(f"  Заказов мерча:            {merch_orders}")
     print(f"  Списано на мерч (вишенки): {total_merch_points}")
+    print(f"  Списаний в магазине:      {shop_deductions}")
+    print(f"  Списано в магазине:       {total_shop_points}")
 
 
 def print_students_table(
@@ -731,6 +744,240 @@ def format_order_datetime(value) -> str:
         return str(value)
 
 
+@dataclass
+class DeductionRow:
+    """Одна запись списания вишенок (мерч или магазин)."""
+
+    kind: str  # merch | shop
+    record_id: int
+    student_id: int
+    student_name: str
+    study_group: str
+    points: int
+    created_at: datetime | None
+    description: str
+
+    @property
+    def kind_label(self) -> str:
+        return "мерч" if self.kind == "merch" else "магазин"
+
+    @property
+    def sort_key(self) -> tuple:
+        ts = self.created_at.timestamp() if self.created_at else 0.0
+        return (ts, self.record_id)
+
+
+def fetch_deduction_rows(
+    db: Session,
+    *,
+    student_id: int | None = None,
+    kind: str | None = None,
+) -> list[DeductionRow]:
+    """Все списания: заказы мерча и отрицательные транзакции магазина."""
+    rows: list[DeductionRow] = []
+
+    if kind in (None, "merch"):
+        q_merch = (
+            db.query(MerchOrder, Student)
+            .join(Student, Student.id == MerchOrder.student_id)
+        )
+        if student_id is not None:
+            q_merch = q_merch.filter(MerchOrder.student_id == student_id)
+        for order, student in q_merch.all():
+            item_names = ", ".join(i.product_name for i in order.items[:3])
+            if len(order.items) > 3:
+                item_names += "…"
+            desc = f"Заказ мерча #{order.id}"
+            if item_names:
+                desc += f" ({item_names})"
+            rows.append(
+                DeductionRow(
+                    kind="merch",
+                    record_id=order.id,
+                    student_id=student.id,
+                    student_name=student.full_name,
+                    study_group=student.study_group,
+                    points=order.total_points,
+                    created_at=order.created_at,
+                    description=desc,
+                )
+            )
+
+    if kind in (None, "shop"):
+        q_shop = (
+            db.query(Transaction, Student, Item)
+            .join(Student, Student.id == Transaction.student_id)
+            .outerjoin(Item, Item.id == Transaction.item_id)
+            .filter(Transaction.points_change < 0)
+        )
+        if student_id is not None:
+            q_shop = q_shop.filter(Transaction.student_id == student_id)
+        for tx, student, item in q_shop.all():
+            item_name = item.name if item else f"item_id={tx.item_id}"
+            rows.append(
+                DeductionRow(
+                    kind="shop",
+                    record_id=tx.id,
+                    student_id=student.id,
+                    student_name=student.full_name,
+                    study_group=student.study_group,
+                    points=-tx.points_change,
+                    created_at=None,
+                    description=f"Магазин: {item_name}",
+                )
+            )
+
+    rows.sort(key=lambda r: r.sort_key, reverse=True)
+    return rows
+
+
+def print_deductions_table(
+    db: Session,
+    *,
+    student_id: int | None = None,
+    kind: str | None = None,
+    offset: int = 0,
+) -> int:
+    rows = fetch_deduction_rows(db, student_id=student_id, kind=kind)
+    total = len(rows)
+    page = rows[offset : offset + PAGE_SIZE]
+
+    kind_label = {
+        None: "Все списания",
+        "merch": "Списания: заказы мерча",
+        "shop": "Списания: магазин",
+    }.get(kind, "Списания")
+
+    if student_id is not None:
+        st = db.get(Student, student_id)
+        name = st.full_name if st else f"id={student_id}"
+        print(f"\n{kind_label} — студент {name}: {total} шт.")
+    else:
+        print(f"\n{kind_label}: {total} шт.")
+
+    if not page:
+        print("  (пусто)")
+        return 0
+
+    print(f"  Показано {offset + 1}–{offset + len(page)} из {total}\n")
+    for row in page:
+        when = format_order_datetime(row.created_at)
+        print(
+            f"  [{row.kind_label:7}]  "
+            f"id={row.record_id:<5}  {when}  "
+            f"{row.student_name} ({row.study_group})  "
+            f"-{row.points} виш."
+        )
+        print(f"            {row.description}")
+    return len(page)
+
+
+def cancel_merch_order(db: Session, order_id: int) -> bool:
+    order = db.get(MerchOrder, order_id)
+    if not order:
+        print("Заказ не найден.")
+        return False
+    student = db.get(Student, order.student_id)
+    if not student:
+        print("Студент заказа не найден.")
+        return False
+
+    print_header(f"Отмена заказа мерча #{order.id}")
+    print(f"  Студент:  {student.full_name} ({student.study_group})")
+    print(f"  Сумма:    {order.total_points} вишенок")
+    print(f"  Дата:     {format_order_datetime(order.created_at)}")
+    print("\n  Состав заказа:")
+    if not order.items:
+        print("    (нет позиций)")
+    else:
+        for item in order.items:
+            print(
+                f"    • {item.product_name}  "
+                f"{item.quantity} × {item.unit_price} = {item.line_total} виш."
+            )
+
+    if not read_yes_no(
+        f"Удалить заказ #{order_id} и вернуть {order.total_points} вишенок на баланс?"
+    ):
+        print("Отменено.")
+        return False
+
+    refunded = order.total_points
+    db.delete(order)
+    db.flush()
+    sync_student_points(db, student)
+    db.commit()
+    db.refresh(student)
+    print(
+        f"Заказ #{order_id} удалён. Возвращено {refunded} вишенок. "
+        f"Баланс студента: {student.available_points}"
+    )
+    return True
+
+
+def cancel_shop_transaction(db: Session, tx_id: int) -> bool:
+    tx = db.get(Transaction, tx_id)
+    if not tx:
+        print("Транзакция не найдена.")
+        return False
+    if tx.points_change >= 0:
+        print("Это не списание (points_change >= 0). Откат не нужен.")
+        return False
+
+    student = db.get(Student, tx.student_id)
+    if not student:
+        print("Студент не найден.")
+        return False
+
+    item = db.get(Item, tx.item_id)
+    item_name = item.name if item else f"item_id={tx.item_id}"
+    refunded = -tx.points_change
+
+    print_header(f"Отмена списания магазина #{tx.id}")
+    print(f"  Студент:  {student.full_name} ({student.study_group})")
+    print(f"  Товар:    {item_name}")
+    print(f"  Сумма:    {refunded} вишенок")
+
+    if not read_yes_no(
+        f"Удалить транзакцию #{tx_id} и вернуть {refunded} вишенок на баланс?"
+    ):
+        print("Отменено.")
+        return False
+
+    db.delete(tx)
+    db.flush()
+    sync_student_points(db, student)
+    db.commit()
+    db.refresh(student)
+    print(
+        f"Транзакция #{tx_id} удалена. Возвращено {refunded} вишенок. "
+        f"Баланс студента: {student.available_points}"
+    )
+    return True
+
+
+def print_deduction_detail(db: Session, kind: str, record_id: int) -> None:
+    if kind == "merch":
+        print_merch_order_detail(db, record_id)
+        return
+    if kind == "shop":
+        tx = db.get(Transaction, record_id)
+        if not tx:
+            print("Транзакция не найдена.")
+            return
+        student = db.get(Student, tx.student_id)
+        item = db.get(Item, tx.item_id)
+        print_header(f"Списание магазина #{tx.id}")
+        if student:
+            print(f"  Студент:  {student.full_name} ({student.study_group}), id={student.id}")
+        print(f"  Товар:    {item.name if item else tx.item_id}")
+        print(f"  Изменение: {tx.points_change} вишенок")
+        if tx.points_change < 0:
+            print(f"  Списано:  {-tx.points_change} вишенок")
+        return
+    print("Неизвестный тип. Используйте merch или shop.")
+
+
 def print_merch_orders_table(
     db: Session,
     *,
@@ -795,16 +1042,21 @@ def print_merch_order_detail(db: Session, order_id: int) -> None:
 def menu_merch_orders(db: Session) -> None:
     offset = 0
     filter_student_id: int | None = None
+    list_kind: str | None = None
     while True:
-        print_header("Заказы мерча")
+        print_header("Списания вишенок и заказы мерча")
         if filter_student_id is not None:
             st = db.get(Student, filter_student_id)
             label = st.full_name if st else f"id={filter_student_id}"
             print(f"  Фильтр: студент {label}")
-        print("  1 — все заказы (список)")
-        print("  2 — детали заказа по ID")
-        print("  3 — заказы конкретного студента")
-        print("  4 — сбросить фильтр по студенту")
+        print("  1 — все списания (мерч + магазин)")
+        print("  2 — только заказы мерча")
+        print("  3 — только списания магазина (transactions)")
+        print("  4 — детали (merch — ID заказа / shop — ID транзакции)")
+        print("  5 — фильтр по student_id")
+        print("  6 — сбросить фильтр")
+        print("  7 — откатить заказ мерча (удалить, вернуть вишенки)")
+        print("  8 — откатить списание магазина")
         print("  9 — следующая страница списка")
         print("  0 — назад")
         choice = read_int("Выбор: ")
@@ -813,19 +1065,51 @@ def menu_merch_orders(db: Session) -> None:
             return
         if choice == 1:
             offset = 0
-            shown = print_merch_orders_table(
-                db, student_id=filter_student_id, offset=offset
+            shown = print_deductions_table(
+                db,
+                student_id=filter_student_id,
+                kind=None,
+                offset=offset,
             )
             if shown == PAGE_SIZE:
                 print("\n  (есть ещё — пункт 9)")
             pause()
         elif choice == 2:
-            oid = read_int("ID заказа: ")
-            if oid is None:
-                continue
-            print_merch_order_detail(db, oid)
+            offset = 0
+            list_kind = "merch"
+            shown = print_deductions_table(
+                db,
+                student_id=filter_student_id,
+                kind="merch",
+                offset=offset,
+            )
+            if shown == PAGE_SIZE:
+                print("\n  (есть ещё — пункт 9)")
             pause()
         elif choice == 3:
+            offset = 0
+            list_kind = "shop"
+            shown = print_deductions_table(
+                db,
+                student_id=filter_student_id,
+                kind="shop",
+                offset=offset,
+            )
+            if shown == PAGE_SIZE:
+                print("\n  (есть ещё — пункт 9)")
+            pause()
+        elif choice == 4:
+            kind_raw = read_str("Тип (merch / shop): ")
+            if not kind_raw or kind_raw not in {"merch", "shop"}:
+                print("Укажите merch или shop.")
+                pause()
+                continue
+            rid = read_int("ID записи: ")
+            if rid is None:
+                continue
+            print_deduction_detail(db, kind_raw, rid)
+            pause()
+        elif choice == 5:
             sid = read_int("student_id: ")
             if sid is None:
                 continue
@@ -835,15 +1119,31 @@ def menu_merch_orders(db: Session) -> None:
                 filter_student_id = sid
                 offset = 0
             pause()
-        elif choice == 4:
+        elif choice == 6:
             filter_student_id = None
+            list_kind = None
             offset = 0
             print("Фильтр сброшен.")
             pause()
+        elif choice == 7:
+            oid = read_int("ID заказа мерча для отката: ")
+            if oid is None:
+                continue
+            cancel_merch_order(db, oid)
+            pause()
+        elif choice == 8:
+            tid = read_int("ID транзакции магазина для отката: ")
+            if tid is None:
+                continue
+            cancel_shop_transaction(db, tid)
+            pause()
         elif choice == 9:
             offset += PAGE_SIZE
-            shown = print_merch_orders_table(
-                db, student_id=filter_student_id, offset=offset
+            shown = print_deductions_table(
+                db,
+                student_id=filter_student_id,
+                kind=list_kind,
+                offset=offset,
             )
             if shown == 0:
                 print("Больше записей нет.")
@@ -860,7 +1160,7 @@ def main_menu(db: Session) -> None:
         print("  2 — мероприятия (запись / посещения)")
         print("  3 — аккаунты")
         print("  4 — статистика")
-        print("  5 — заказы мерча")
+        print("  5 — списания вишенок / заказы мерча")
         print("  0 — выход")
         choice = read_int("Выбор: ")
 
