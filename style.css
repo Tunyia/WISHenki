@@ -1248,6 +1248,32 @@ body {
     color: #014590;
 }
 
+.merch-title-char {
+    display: inline-block;
+    animation: merch-title-wave 1.4s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.07s);
+}
+
+.merch-title-space {
+    width: 0.35em;
+}
+
+@keyframes merch-title-wave {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .merch-title-char {
+        animation: none;
+    }
+}
+
 .btn-merch-cart {
     flex-shrink: 0;
     padding: 10px 22px;
@@ -1900,6 +1926,16 @@ body {
 
     .merch-title {
         font-size: 26px;
+    }
+
+    @keyframes merch-title-wave {
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-3px);
+        }
     }
 
     .btn-merch-cart {
